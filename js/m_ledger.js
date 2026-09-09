@@ -23,12 +23,13 @@ const LedgerMod = {
     // 月饼门店台账：与金山文档《3门店月饼进货、销售、推广产品领取台账》同步（只读镜像，每小时自动从金山同步）。
     mooncake: {title: '月饼门店台账', icon: '🥮',
       readOnly: true,
+      kdocsUrl: 'https://www.kdocs.cn/l/cdIi3fNSAlFz',   // 金山文档在线台账（点击按钮新标签打开）
       otype: ['入库', '销售', '推广领取', '预订'],
       contact: true,                 // 联系人：购买人·去向 / 领取人 / 姓名·单位 / 供应商
       pays: true,                    // 收款方式：销售、预订有支付信息
       amount: true,                  // 金额
       deliveryDate: true,            // 取·送货时间 / 生产日期
-      srcNote: '本账本与金山文档《3门店月饼进货、销售、推广产品领取台账》同步：每小时自动同步金山文档最新数据；工作台为只读，请在金山文档中修改。'}
+      srcNote: '本账本与金山文档《3门店月饼进货、销售、推广产品领取台账》同步：每小时自动同步金山文档最新数据；工作台为只读，请在金山文档中修改（点「🔗 金山文档」按钮可新开标签页直达在线台账）。'}
   },
   // 原始数组（用于增删改，含旧格式记录）
   raw(book){
@@ -93,7 +94,8 @@ const LedgerMod = {
         this.BOOKS[k].icon + ' ' + this.BOOKS[k].title + '</span>').join('') + '</div>' +
       '<div class="card"><h3>' + B.icon + ' ' + B.title + ' · ' + (isYear ? this.year + ' 年' : this.month) +
       (B.readOnly
-        ? ' <button class="btn sm ghost" style="margin-left:auto" onclick="LedgerMod.manualSync()">🔄 立即同步</button>'
+        ? ' <button class="btn sm ghost" style="margin-left:auto" onclick="LedgerMod.manualSync()">🔄 立即同步</button>' +
+          (B.kdocsUrl ? ' <button class="btn sm" style="background:var(--accent)" onclick="LedgerMod.openKdocs()">🔗 金山文档</button>' : '')
         : ' <button class="btn sm" style="margin-left:auto" onclick="LedgerMod.addNew()">＋ 登记</button>') + '</h3>' +
       (B.srcNote ? '<div class="sync-note">🔄 ' + esc(this.syncSrcNote(bk)) + '</div>' : '');
 
@@ -157,7 +159,6 @@ const LedgerMod = {
           '<input autocomplete="off" type="number" min="2000" max="2100" value="' + this.year + '" onchange="LedgerMod.setYear(this.value)" ' +
           'style="width:72px;display:inline-block;vertical-align:middle;font-size:13px"> 年度数据分析</h3>' + this.bookYearSummary(bk, this.year) + '</div>') +
       '</div>';
-    this.checkReminders();
   },
   setYear(v){ if(v){ this.year = String(v); this.render(); } },
   // 云端同步账本「立即同步」：从云端 textdb 强制刷新到最新（含刚从金山文档同步进来的数据）。
@@ -174,6 +175,11 @@ const LedgerMod = {
       this.render();
       toast('已尝试刷新，但云端读取失败，请稍后重试', false);
     });
+  },
+  // 新标签页打开金山文档在线台账（月饼门店台账的源头，可在线修改）
+  openKdocs(){
+    const bk = this.curBook, B = this.BOOKS[bk];
+    if(B && B.kdocsUrl) window.open(B.kdocsUrl, '_blank', 'noopener');
   },
   // 最近一次从金山文档同步到云端的时间（由同步脚本写入 ledger._syncDone）
   lastSyncText(){

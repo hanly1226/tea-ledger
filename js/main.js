@@ -15,6 +15,7 @@ const Nav = {
     ai:      {label: 'AI助手',  icon: '🤖', mod: () => AiMod}
   },
   go(key){
+    closeModal();   // 任何打开的弹窗（含提醒弹窗 #modal-mask）都不应挡住导航：点导航即关闭弹窗并跳转
     this.cur = key;
     $$('.nav-item').forEach(n => n.classList.toggle('on', n.dataset.key === key));
     this.MODS[key].mod().render();
