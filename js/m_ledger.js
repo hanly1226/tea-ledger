@@ -20,7 +20,7 @@ const LedgerMod = {
   BOOKS: {
     linfang:  {title: '临方中心产品入库登记', icon: '📦', pays: null, amount: true},
     sales:    {title: '中药茶饮销售登记', icon: '🍵', pays: ['微信/支付宝', '小程序', '现金', '挂号', '食堂卡', '未付款', '院内', '单位'], amount: true},
-    reception:{title: '院内接待推广产品登记', icon: '🤝', amount: true, head: {key: 'contact', label: '联系人'}, dept: {label: '科室', opts: ['中医科','康复科','理疗科','护理部','治未病科','营养科']}},
+    reception:{title: '院内接待推广产品登记', icon: '🤝', amount: true, pays: ['未付款', '院内', '现金'], head: {key: 'contact', label: '联系人'}, dept: {label: '科室', opts: ['中医科','康复科','理疗科','护理部','治未病科','营养科']}},
     bracelet: {title: '合香产品销售登记', icon: '📿', pays: ['微信/支付宝', '小程序', '现金', '挂号', '食堂卡', '未付款', '院内', '单位'], amount: true},
     group:    {title: '单位订购产品登记', icon: '🛒', pays: ['扫码（伊尹）', '转账（伊尹）', '扫码（伊云本草）', '转账（伊云本草）', '小程序', '未付款'], amount: true, head: {key: 'unit', label: '单位'}, inv: true, invOpts: ['普票', '专票', '暂不开发票'], deliveryMethod: ['自提', '门店配送', '快递'], deliveryDate: true, deliveryStatus: ['未配送', '配送']},
     commission:{title: '委托加工产品入库登记', icon: '🏭', settle: ['未结账', '已结账'], amount: true, head: {key: 'processor', label: '加工方', select: true}, deposit: true},
@@ -167,7 +167,7 @@ const LedgerMod = {
       (B.readOnly
         ? ' <button class="btn sm ghost" style="margin-left:auto" onclick="LedgerMod.manualSync()">🔄 立即同步</button>' +
           (B.kdocsUrl ? ' <button class="btn sm" style="background:var(--accent)" onclick="LedgerMod.openKdocs()">🔗 金山文档</button>' : '')
-        : ' <button class="btn sm" style="margin-left:auto" onclick="LedgerMod.addNew()">＋ 登记</button>') + '</h3>' +
+        : (B.virtual ? '' : ' <button class="btn sm" style="margin-left:auto" onclick="LedgerMod.addNew()">＋ 登记</button>')) + '</h3>' +
       (B.srcNote ? '<div class="sync-note">🔄 ' + esc(this.syncSrcNote(bk)) + '</div>' : '');
 
     const o = {showHead, showPays, showInv, showFlags, showOtype, showContact, showUnit, showDeliveryMethod, showDeliveryDate, showDeliveryStatus, showSpecial, showInvTitle, showSalesman, showPayStatus, showDeposit, showSettle, showDept};
@@ -329,13 +329,11 @@ const LedgerMod = {
   // ===== 提醒：每周一未付款订单 + 配送前3天每日待配送 =====
   // 返回该周周一日期串（用于「每周一次」去重键）
   mondayKey(t){ return fmtDate(startOfWeek(parseDate(t))); },
-  // 全账本未付款订单（按账本自身规则判定）。book 为账本 key，用于识别无收款字段的本院职工账本。
+  // 赊账判定：仅「收款方式」中勾选了「未付款」的订单才算赊账。
+  // 委托加工的「结账方式」、院内接待未勾选未付款等均不计入（用户明确：赊账=支付方式勾选未付款）。
   isUnpaid(book, B, r){
     if(B.flags && B.flags.some(f => f.key === 'paid')) return !(r.flags && r.flags.paid);
     if(B.pays) return (r.pays || []).includes('未付款');
-    if(B.payStatus) return (r.payStatus || B.payStatus[0]) !== '全款结清';
-    if(B.settle) return (r.settle || B.settle[0]) === '未结账';          // 委托加工：未结账即赊账
-    if(book === 'reception') return true;                                // 院内接待：无收款方式字段，一律视为赊账（本院职工）
     return false;
   },
   allUnpaid(){
