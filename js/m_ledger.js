@@ -42,9 +42,9 @@ const LedgerMod = {
       deliveryDate: true,            // 取·送货时间 / 生产日期
       srcNote: '本账本与金山文档《3门店月饼进货、销售、推广产品领取台账》同步：每小时自动同步金山文档最新数据；工作台为只读，请在金山文档中修改（点「🔗 金山文档」按钮可新开标签页直达在线台账）。'},
     // 赊账账本：虚拟账本，汇集全店未付款/未结账订单
-    unpaid: {title: '赊账账本', icon: '💳', virtual: true,
+    unpaid: {title: '赊账账本', icon: '💳', virtual: true, amount: true,
       custTypes: ['门店顾客', '本院职工', '单位订购'],
-      srcNote: '汇集全店未付款/未结账订单，按顾客类型分标签。'}
+      srcNote: '汇集全店未付款/未结账订单，按顾客类型分标签；每行显示赊账方（单位/个人）与赊账金额，点 ✎ 可回原订单修改收款方式，取消「未付款」即自动移出本账本。'}
   },
   // 原始数组（用于增删改，含旧格式记录）
   raw(book){
@@ -109,6 +109,14 @@ const LedgerMod = {
     if(book === 'reception' || (r.pays && r.pays.includes('院内'))) return '本院职工';
     return '门店顾客';
   },
+  // 赊账方名称（虚拟账本每行显示）：优先取来源账本里记录的单位/姓名/联系人；均无则回退到顾客类型标签
+  debtorName(r){
+    const bk = r._srcBook || '';
+    if(bk === 'group') return r.unit || this.custTypeOf(bk, r);
+    if(bk === 'linfangPre') return r.name || '';
+    if(r.contact) return r.contact;
+    return this.custTypeOf(bk, r);
+  },
 
   norm(r){
     if(r.items) return r; // 已是新订单结构
@@ -141,7 +149,7 @@ const LedgerMod = {
     list.forEach(r => { totalQty += this.qtySum(r); totalAmt += (+r.total || 0); });
 
     const showHead = !!B.head, showPays = !!B.pays, showInv = !!B.inv, showFlags = !!(B.flags && B.flags.length), showDept = !!B.dept;
-    const showOtype = !!(B.otype && !this.curOtype), showCustType = !!(B.custTypes && !this.curCustType), showContact = !!B.contact, showUnit = !!B.unitField, showDeliveryMethod = !!B.deliveryMethod, showDeliveryDate = !!B.deliveryDate, showDeliveryStatus = !!B.deliveryStatus, showSpecial = !!B.special, showInvTitle = !!B.invTitle, showPhone = !!B.phone;
+    const showOtype = !!(B.otype && !this.curOtype), showCustType = !!(B.custTypes && !this.curCustType), showContact = !!B.contact, showUnit = !!B.unitField, showDeliveryMethod = !!B.deliveryMethod, showDeliveryDate = !!B.deliveryDate, showDeliveryStatus = !!B.deliveryStatus, showSpecial = !!B.special, showInvTitle = !!B.invTitle, showPhone = !!B.phone, showDebtor = !!B.virtual;
     const showPayStatus = !!B.payStatus, showSalesman = !!B.salesman, showDeposit = !!B.deposit, showSettle = !!B.settle;
     const prodOpts = Store.get('products').items.filter(p => !p.del).map(p => '<option value="' + esc(p.name) + '">').join('');
 
@@ -160,7 +168,7 @@ const LedgerMod = {
       '<input autocomplete="off" type="date" value="' + this.dateTo + '" onchange="LedgerMod.dateTo=this.value||\'\';LedgerMod.render()" placeholder="结束日期">' +
       (hasRange ? ' <button class="btn sm ghost" onclick="LedgerMod.dateFrom=\'\';LedgerMod.dateTo=\'\';LedgerMod.render()">✕ 清除</button>' : '') +
       '</span>' +
-      (B.readOnly ? '' :
+      (B.readOnly || B.virtual ? '' :
         '<button class="btn sm ghost" onclick="LedgerMod.downloadLedgerTemplate(\'' + bk + '\')">⬇ 📄 模板</button>' +
         '<button class="btn sm ghost" onclick="LedgerMod.importLedger(\'' + bk + '\')">📥 导入</button>') +
       '<button class="btn sm ghost" onclick="LedgerMod.exportCsv()">⬇ 导出CSV</button>' +
@@ -188,9 +196,10 @@ const LedgerMod = {
         : (B.virtual ? '' : ' <button class="btn sm" style="margin-left:auto" onclick="LedgerMod.addNew()">＋ 登记</button>')) + '</h3>' +
       (B.srcNote ? '<div class="sync-note">🔄 ' + esc(this.syncSrcNote(bk)) + '</div>' : '');
 
-    const o = {showHead, showPays, showInv, showFlags, showOtype, showContact, showUnit, showDeliveryMethod, showDeliveryDate, showDeliveryStatus, showSpecial, showInvTitle, showSalesman, showPayStatus, showDeposit, showSettle, showDept, showPhone};
-    const colCount = 1 + (showOtype?1:0) + (showContact?1:0) + (showSalesman?1:0) + (showUnit?1:0) + (showHead?1:0) + (showPhone?1:0) + 1 + 1 + (B.amount?1:0) + (showPays?1:0) + (showPayStatus?1:0) + (showSettle?1:0) + (showDept?1:0) + (showDeliveryMethod?1:0) + (showDeliveryDate?1:0) + (showDeliveryStatus?1:0) + (showFlags?B.flags.length:0) + (showInv?1:0) + (B.readOnly?0:1);
+    const o = {showHead, showPays, showInv, showFlags, showOtype, showContact, showUnit, showDeliveryMethod, showDeliveryDate, showDeliveryStatus, showSpecial, showInvTitle, showSalesman, showPayStatus, showDeposit, showSettle, showDept, showPhone, showDebtor};
+    const colCount = 1 + (showOtype?1:0) + (showContact?1:0) + (showSalesman?1:0) + (showUnit?1:0) + (showHead?1:0) + (showPhone?1:0) + (showDebtor?1:0) + 1 + 1 + (B.amount?1:0) + (showPays?1:0) + (showPayStatus?1:0) + (showSettle?1:0) + (showDept?1:0) + (showDeliveryMethod?1:0) + (showDeliveryDate?1:0) + (showDeliveryStatus?1:0) + (showFlags?B.flags.length:0) + (showInv?1:0) + (B.readOnly?0:1);
     const thead = '<thead><tr><th>' + (B.dateLabel || '日期') + '</th>' +
+      (showDebtor ? '<th>赊账方</th>' : '') +
       (showOtype ? '<th>订购类型</th>' : '') +
       (showContact ? '<th>联系人</th>' : '') +
       (showSalesman ? '<th>推销员</th>' : '') +
@@ -237,6 +246,7 @@ const LedgerMod = {
       (showOtype ? '<td></td>' : '') + (showContact ? '<td></td>' : '') + (showSalesman ? '<td></td>' : '') + (showUnit ? '<td></td>' : '') +
       (showHead ? '<td></td>' : '') +
       (showPhone ? '<td></td>' : '') +
+      (showDebtor ? '<td></td>' : '') +
       (showDept ? '<td></td>' : '') +
       '<td>' + list.length + ' 单</td><td><b>' + totalQty + '</b></td>' +
       (B.amount ? '<td class="amt"><b>' + moneyFmt(totalAmt) + '</b></td>' : '') +
@@ -482,6 +492,7 @@ const LedgerMod = {
     if(r.note) bits.push(r.note);
     if(bits.length) extra = '<div class="muted lg-extra">' + bits.map(x => esc(x)).join('；') + '</div>';
     return '<tr><td>' + r.date + (r._srcIcon ? (' <span class="tag" title="' + esc('\u6765\u81ea' + r._srcTitle) + '">' + r._srcIcon + '</span>') : '') + '</td>' +
+      (o.showDebtor ? '<td>' + esc(this.debtorName(r)) + '</td>' : '') +
       (o.showOtype ? '<td>' + esc(this.normOtype(r.otype) || '—') + '</td>' : '') +
       (o.showContact ? '<td>' + esc(r.contact || '') + '</td>' : '') +
       (o.showSalesman ? '<td>' + esc(r.salesman || '') + '</td>' : '') +
@@ -502,13 +513,24 @@ const LedgerMod = {
       (o.showDeliveryStatus ? '<td>' + (r.deliveryStatus ? esc(r.deliveryStatus) : '<span class="muted">—</span>') + '</td>' : '') +
       (o.showFlags ? B.flags.map(f => '<td>' + ((r.flags && r.flags[f.key]) ? '是' : '<span class="muted">否</span>') + '</td>').join('') : '') +
       (o.showInv ? '<td>' + (r.inv && r.inv.length ? r.inv.map(esc).join('、') : '<span class="muted">—</span>') + '</td>' : '') +
-      (B.readOnly ? '' : '<td class="ops"><a onclick="LedgerMod.edit(\'' + r.id + '\')" title="编辑">✎</a>' +
-      '<a onclick="LedgerMod.openMove(\'' + r.id + '\')" title="移动到其它账本">⇄</a>' +
-      '<a class="del" onclick="LedgerMod.remove(\'' + r.id + '\')">✕</a></td>') + '</tr>';
+      (B.readOnly ? '' : (B.virtual
+        ? '<td class="ops"><a onclick="LedgerMod.editFrom(\'' + esc(r._srcBook) + '\',\'' + r.id + '\')" title="回原订单修改收款方式">✎</a></td>'
+        : '<td class="ops"><a onclick="LedgerMod.edit(\'' + r.id + '\')" title="编辑">✎</a>' +
+        '<a onclick="LedgerMod.openMove(\'' + r.id + '\')" title="移动到其它账本">⇄</a>' +
+        '<a class="del" onclick="LedgerMod.remove(\'' + r.id + '\')">✕</a></td>')) + '</tr>';
   },
   // ---- 订单登记 / 编辑弹窗 ----
   addNew(){ this.editId = null; this.openForm(null); },
   edit(id){ this.editId = id; this.openForm(id); },
+  // 赊账账本（虚拟）的 ✎：跳到来源账本打开原订单编辑（改收款方式用），并记录来源账本以便保存后跳回
+  editFrom(book, id){
+    const B = this.BOOKS[book];
+    if(!B || B.readOnly) return;
+    this._editReturnBook = this.curBook;   // 当前为虚拟赊账账本
+    this.curBook = book;
+    this.editId = id;
+    this.openForm(id);
+  },
   openForm(id){
     const bk = this.curBook, B = this.BOOKS[bk];
     if(B.readOnly){ toast('本账本为只读同步账本，请在金山文档中修改', false); return; }
@@ -966,6 +988,7 @@ const LedgerMod = {
     this.editId = null;
     closeModal();
     this.month = date.slice(0, 7);
+    if(this._editReturnBook){ this.curBook = this._editReturnBook; this._editReturnBook = null; }
     this.render();
     toast('已保存');
   },
@@ -1027,9 +1050,10 @@ const LedgerMod = {
     const orders = this.filteredList(this.curBook)
       .sort((a, b) => this.dateKey(a.date) < this.dateKey(b.date) ? 1 : -1);
     const showHead = !!B.head, showPays = !!B.pays, showInv = !!B.inv, showFlags = !!(B.flags && B.flags.length);
-    const showOtype = !!B.otype, showContact = !!B.contact, showUnit = !!B.unitField, showDeliveryMethod = !!B.deliveryMethod, showDeliveryDate = !!B.deliveryDate, showDeliveryStatus = !!B.deliveryStatus, showSpecial = !!B.special, showInvTitle = !!B.invTitle, showPhone = !!B.phone;
+    const showOtype = !!B.otype, showContact = !!B.contact, showUnit = !!B.unitField, showDeliveryMethod = !!B.deliveryMethod, showDeliveryDate = !!B.deliveryDate, showDeliveryStatus = !!B.deliveryStatus, showSpecial = !!B.special, showInvTitle = !!B.invTitle, showPhone = !!B.phone, showDebtor = !!B.virtual;
     const showPayStatus = !!B.payStatus, showSalesman = !!B.salesman, showDeposit = !!B.deposit, showSettle = !!B.settle, showDept = !!B.dept;
     const head = [(B.dateLabel || '日期')]
+      .concat(showDebtor ? ['赊账方'] : [])
       .concat(showOtype ? ['订购类型'] : [])
       .concat(showContact ? ['联系人'] : [])
       .concat(showSalesman ? ['推销员'] : [])
@@ -1053,6 +1077,7 @@ const LedgerMod = {
     const lines = [head.join(',')].concat(orders.flatMap(r =>
       (r.items || []).map(it =>
         [r.date]
+        .concat(showDebtor ? [this.debtorName(r) || ''] : [])
         .concat(showOtype ? [r.otype || ''] : [])
         .concat(showContact ? [r.contact || ''] : [])
         .concat(showSalesman ? [r.salesman || ''] : [])
