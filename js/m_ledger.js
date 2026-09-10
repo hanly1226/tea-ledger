@@ -8,7 +8,10 @@ const LedgerMod = {
   curBook: 'linfang',
   month: todayStr().slice(0, 7),
   year: String(new Date().getFullYear()),
-  viewMode: 'month',           // 'month' 按月查看 / 'year' 按年查看（整年记录 + 年度分析）
+  viewMode: 'year',            // 默认按年查看（整年记录 + 年度分析）；可用「时间段」筛选任意区间
+  dateFrom: '',                // 时间段起始（YYYY-MM-DD），留空=不限
+  dateTo: '',                  // 时间段结束（YYYY-MM-DD），留空=不限
+  curOtype: '',                // 月饼门店台账按订购类型分小标签；''=全部
   editId: null,
   weekOffset: 0,
   weekCustomStart: '',
@@ -41,6 +44,25 @@ const LedgerMod = {
   rows(book){
     return this.raw(book).filter(r => !r.del).map(r => this.norm(r));
   },
+  // 按「年 / 时间段 + 订购类型小标签」过滤后的可见记录（render 与导出 CSV 共用）
+  filteredList(book){
+    const B = this.BOOKS[book];
+    const all = this.rows(book);
+    const hasRange = !!(this.dateFrom || this.dateTo);
+    let list;
+    if(hasRange){
+      const from = this.dateFrom || '0000-01-01';
+      const to = this.dateTo || '9999-12-31';
+      list = all.filter(r => r.date >= from && r.date <= to);
+    } else {
+      list = all.filter(r => r.date.slice(0, 4) === this.year);
+    }
+    list = list.slice().sort((a, b) => a.date < b.date ? 1 : -1);
+    if(B.otype && this.curOtype){
+      list = list.filter(r => (this.normOtype(r.otype) || (B.otype && B.otype[0]) || '') === this.curOtype);
+    }
+    return list;
+  },
   norm(r){
     if(r.items) return r; // 已是新订单结构
     const price = (r.amount && r.qty) ? Math.round(r.amount / r.qty * 100) / 100 : (r.amount || 0);
@@ -64,35 +86,46 @@ const LedgerMod = {
     const el = $('#content');
     const bk = this.curBook, B = this.BOOKS[bk];
     this.syncAllInitial();
-    const all = this.rows(bk);
-    const isYear = this.viewMode === 'year';
-    const period = isYear ? this.year : this.month;
-    const list = all.filter(r => r.date.slice(0, isYear ? 4 : 7) === period).sort((a, b) => a.date < b.date ? 1 : -1);
+    const hasRange = !!(this.dateFrom || this.dateTo);
+    if(!B.otype) this.curOtype = '';
+    const list = this.filteredList(bk);
     let totalQty = 0, totalAmt = 0;
     list.forEach(r => { totalQty += this.qtySum(r); totalAmt += (+r.total || 0); });
 
     const showHead = !!B.head, showPays = !!B.pays, showInv = !!B.inv, showFlags = !!(B.flags && B.flags.length), showDept = !!B.dept;
-    const showOtype = !!B.otype, showContact = !!B.contact, showUnit = !!B.unitField, showDeliveryMethod = !!B.deliveryMethod, showDeliveryDate = !!B.deliveryDate, showDeliveryStatus = !!B.deliveryStatus, showSpecial = !!B.special, showInvTitle = !!B.invTitle;
+    const showOtype = !!(B.otype && !this.curOtype), showContact = !!B.contact, showUnit = !!B.unitField, showDeliveryMethod = !!B.deliveryMethod, showDeliveryDate = !!B.deliveryDate, showDeliveryStatus = !!B.deliveryStatus, showSpecial = !!B.special, showInvTitle = !!B.invTitle;
     const showPayStatus = !!B.payStatus, showSalesman = !!B.salesman, showDeposit = !!B.deposit, showSettle = !!B.settle;
     const prodOpts = Store.get('products').items.filter(p => !p.del).map(p => '<option value="' + esc(p.name) + '">').join('');
+
+    const scopeLabel = hasRange
+      ? ((this.dateFrom || '…') + ' ~ ' + (this.dateTo || '…'))
+      : (this.year + ' 年');
 
     const head =
       '<div class="mod-head"><h2>📒 运营台账</h2>' +
       '<div class="date-nav">' +
-      '<span class="seg"><button class="btn sm' + (isYear ? '' : ' on') + '" onclick="LedgerMod.viewMode=\'month\';LedgerMod.render()">按月</button>' +
-      '<button class="btn sm' + (isYear ? ' on' : '') + '" onclick="LedgerMod.viewMode=\'year\';LedgerMod.render()">按年</button></span>' +
-      (isYear
-        ? '<input autocomplete="off" type="number" min="2000" max="2100" value="' + this.year + '" onchange="LedgerMod.setYear(this.value)">'
-        : '<input autocomplete="off" type="month" value="' + this.month + '" onchange="LedgerMod.month=this.value;LedgerMod.render()">') +
+      '<span class="seg" title="按年份查看整年记录"><label class="dn-lab">年</label>' +
+      '<input autocomplete="off" type="number" min="2000" max="2100" value="' + this.year + '" onchange="LedgerMod.setYear(this.value)"></span>' +
+      '<span class="date-range" title="选择时间段筛选（留空则显示整年记录）"><label class="dn-lab">时间段</label>' +
+      '<input autocomplete="off" type="date" value="' + this.dateFrom + '" onchange="LedgerMod.dateFrom=this.value||\'\';LedgerMod.render()" placeholder="起始日期"> ' +
+      '<span class="dn-tilde">~</span> ' +
+      '<input autocomplete="off" type="date" value="' + this.dateTo + '" onchange="LedgerMod.dateTo=this.value||\'\';LedgerMod.render()" placeholder="结束日期">' +
+      (hasRange ? ' <button class="btn sm ghost" onclick="LedgerMod.dateFrom=\'\';LedgerMod.dateTo=\'\';LedgerMod.render()">✕ 清除</button>' : '') +
+      '</span>' +
       (B.readOnly ? '' :
         '<button class="btn sm ghost" onclick="LedgerMod.downloadLedgerTemplate(\'' + bk + '\')">⬇ 📄 模板</button>' +
         '<button class="btn sm ghost" onclick="LedgerMod.importLedger(\'' + bk + '\')">📥 导入</button>') +
-      '<button class="btn sm ghost" onclick="LedgerMod.exportCsv()">⬇ 导出' + (isYear ? '本年' : '本月') + 'CSV</button>' +
+      '<button class="btn sm ghost" onclick="LedgerMod.exportCsv()">⬇ 导出CSV</button>' +
       '<button class="btn sm" style="background:var(--accent)" onclick="LedgerMod.showUnpaid()" title="一键搜索全部账本未付款订单">🔍 未付款</button></div></div>' +
       '<div class="tabs">' + Object.keys(this.BOOKS).map(k =>
         '<span class="tab' + (k === bk ? ' on' : '') + '" onclick="LedgerMod.curBook=\'' + k + '\';LedgerMod.render()">' +
         this.BOOKS[k].icon + ' ' + this.BOOKS[k].title + '</span>').join('') + '</div>' +
-      '<div class="card"><h3>' + B.icon + ' ' + B.title + ' · ' + (isYear ? this.year + ' 年' : this.month) +
+      (B.otype ? '<div class="tabs otype-tabs">' +
+        '<span class="tab' + (!this.curOtype ? ' on' : '') + '" onclick="LedgerMod.curOtype=\'\';LedgerMod.render()">全部</span>' +
+        this.distinctOtypes(B, this.rows(bk)).map(ot =>
+          '<span class="tab' + (this.curOtype === ot ? ' on' : '') + '" onclick="LedgerMod.curOtype=\'' + esc(ot) + '\';LedgerMod.render()">' + esc(ot) + '</span>').join('') +
+        '</div>' : '') +
+      '<div class="card"><h3>' + B.icon + ' ' + B.title + ' · ' + scopeLabel +
       (B.readOnly
         ? ' <button class="btn sm ghost" style="margin-left:auto" onclick="LedgerMod.manualSync()">🔄 立即同步</button>' +
           (B.kdocsUrl ? ' <button class="btn sm" style="background:var(--accent)" onclick="LedgerMod.openKdocs()">🔗 金山文档</button>' : '')
@@ -120,7 +153,7 @@ const LedgerMod = {
 
     let body;
     if(!list.length){
-      body = '<tr><td colspan="' + colCount + '" class="empty">本月暂无记录</td></tr>';
+      body = '<tr><td colspan="' + colCount + '" class="empty">' + (hasRange ? ('所选时间段（' + (this.dateFrom || '起始') + ' ~ ' + (this.dateTo || '结束') + '）') : (this.year + ' 年')) + '暂无记录</td></tr>';
     } else if(showOtype){
       body = this.distinctOtypes(B, list).map(ot => {
         const sub = list.filter(r => (this.normOtype(r.otype) || (B.otype && B.otype[0]) || '') === ot);
@@ -143,24 +176,24 @@ const LedgerMod = {
       (showPays ? '<td></td>' : '') + (showPayStatus ? '<td></td>' : '') + (showSettle ? '<td></td>' : '') + (showDeliveryMethod ? '<td></td>' : '') + (showDeliveryDate ? '<td></td>' : '') + (showDeliveryStatus ? '<td></td>' : '') +
       (showFlags ? B.flags.map(() => '<td></td>').join('') : '') + (showInv ? '<td></td>' : '') + '<td></td></tr></tfoot>';
 
-    const extraHint = B.otype ? '表格按「订购类型」分三个分区（' + B.otype.join(' / ') + '），分析区也按分区分别统计，便于各类型对账。' : '';
+    const extraHint = B.otype ? '表格按「订购类型」分小标签（' + B.otype.join(' / ') + '），点击可单独查看某一类，分析区也按当前显示范围统计。' : '';
     const syncHint = this.syncHintFor(bk);
+    let analysisHtml;
+    if(hasRange || (B.otype && this.curOtype)){
+      analysisHtml = this.renderBookStats(this.analyzeList(B, list));
+    } else {
+      analysisHtml = this.bookYearSummary(bk, this.year);
+    }
     el.innerHTML = head +
       '<div class="tbl-scroll"><table class="tbl">' + thead + '<tbody>' + body + '</tbody>' + tfoot + '</table></div>' +
       '<div class="hint">一个订单可登记多种产品，每项填写单价与数量后自动合计；点击 ✎ 可修改订单（增删产品、改单价/数量/付款/发票）。' +
       (B.head ? '「' + esc(B.head.label) + '」为每单必填的归属信息。' : '') +
       (B.otype ? '「订购类型」决定归属分区，单位/渠道仅企业单位与渠道批发显示。' : '') +
       syncHint + extraHint + '</div>' +
-      (isYear
-        ? '<div class="lg-analysis"><h3>📊 ' + B.icon + ' ' + B.title + ' · ' + this.year + ' 年 数据分析</h3>' + this.bookYearSummary(bk, this.year) + '</div>'
-        : '<div class="lg-analysis">' + this.bookWeekSection(bk) + '</div>' +
-          '<div class="lg-analysis"><h3>📊 ' + B.icon + ' ' + B.title + ' · ' + this.month + ' 本月数据分析</h3>' + this.bookSummary(bk, this.month) + '</div>' +
-          '<div class="lg-analysis"><h3>📅 ' + B.icon + ' ' + B.title + ' · ' +
-          '<input autocomplete="off" type="number" min="2000" max="2100" value="' + this.year + '" onchange="LedgerMod.setYear(this.value)" ' +
-          'style="width:72px;display:inline-block;vertical-align:middle;font-size:13px"> 年度数据分析</h3>' + this.bookYearSummary(bk, this.year) + '</div>') +
+      '<div class="lg-analysis"><h3>📊 ' + B.icon + ' ' + B.title + ' · ' + scopeLabel + ' 数据分析</h3>' + analysisHtml + '</div>' +
       '</div>';
   },
-  setYear(v){ if(v){ this.year = String(v); this.render(); } },
+  setYear(v){ if(v){ this.year = String(v); this.dateFrom=''; this.dateTo=''; this.render(); } },
   // 云端同步账本「立即同步」：
   //  - 若按需同步函数地址为「公开可访问」（URL 不含 eo_token 访问网关），则直连函数做真正即时同步；
   //  - 当前 EdgeOne Makers 项目带访问网关，浏览器无法跨域调用该函数（仅静态页可被网关放行，
@@ -592,7 +625,7 @@ const LedgerMod = {
     if(!L) return;
     let changed = false;
     Object.keys(L).forEach(bk => {
-      (L[bk] || []).forEach(r => {
+      (Array.isArray(L[bk]) ? L[bk] : []).forEach(r => {
         if(r && Array.isArray(r.pays)){
           const np = r.pays.map(p => (p === '扫码现金') ? '现金' : p);
           if(np.some((p, i) => p !== r.pays[i])){ r.pays = np; changed = true; }
@@ -616,7 +649,7 @@ const LedgerMod = {
     if(!L) return;
     let changed = false;
     Object.keys(L).forEach(bk => {
-      (L[bk] || []).forEach(r => {
+      (Array.isArray(L[bk]) ? L[bk] : []).forEach(r => {
         if(r && r.otype && OTYPE_ALIAS[r.otype]){ r.otype = OTYPE_ALIAS[r.otype]; changed = true; }
       });
     });
@@ -914,9 +947,11 @@ const LedgerMod = {
   },
   exportCsv(){
     const B = this.BOOKS[this.curBook];
-    const isYear = this.viewMode === 'year';
-    const period = isYear ? this.year : this.month;
-    const orders = this.rows(this.curBook).filter(r => r.date.slice(0, isYear ? 4 : 7) === period)
+    const hasRange = !!(this.dateFrom || this.dateTo);
+    const period = hasRange
+      ? ((this.dateFrom || '起') + '_' + (this.dateTo || '止'))
+      : (this.year + '年');
+    const orders = this.filteredList(this.curBook)
       .sort((a, b) => a.date < b.date ? -1 : 1);
     const showHead = !!B.head, showPays = !!B.pays, showInv = !!B.inv, showFlags = !!(B.flags && B.flags.length);
     const showOtype = !!B.otype, showContact = !!B.contact, showUnit = !!B.unitField, showDeliveryMethod = !!B.deliveryMethod, showDeliveryDate = !!B.deliveryDate, showDeliveryStatus = !!B.deliveryStatus, showSpecial = !!B.special, showInvTitle = !!B.invTitle;
@@ -968,7 +1003,7 @@ const LedgerMod = {
     a.href = URL.createObjectURL(blob);
     a.download = B.title + '_' + period + '.csv';
     a.click(); URL.revokeObjectURL(a.href);
-    toast('已导出 CSV（' + (isYear ? this.year + ' 年' : this.month) + '，共 ' + orders.length + ' 单）');
+    toast('已导出 CSV（' + (hasRange ? ('时间段 ' + (this.dateFrom || '起') + ' ~ ' + (this.dateTo || '止')) : (this.year + ' 年')) + '，共 ' + orders.length + ' 单）');
   },
   // ===== 每个台账的 Excel/CSV 模板与导入 =====
   downloadLedgerTemplate(book){
@@ -1173,6 +1208,22 @@ const LedgerMod = {
     toast('已导入 ' + imp.rows.length + ' 条' + (replaceAll ? '（已清空原记录）' : ''));
   },
   // ===== 每本台账的本月数据分析 =====
+  // 基于「已过滤的 list」做统计分析（render 与导出共用；支持年/时间段 + 订购类型小标签）
+  analyzeList(B, list){
+    let totalQty = 0, totalAmt = 0;
+    list.forEach(r => { totalQty += this.qtySum(r); totalAmt += (+r.total || 0); });
+    const payMap = {};
+    if(B.pays){ const payKeys = (Array.isArray(B.pays) ? B.pays.slice() : []); list.forEach(r => (r.pays || []).forEach(p => { if(p && !payKeys.includes(p)) payKeys.push(p); })); payKeys.forEach(p => payMap[p] = {count: 0, amt: 0});
+      list.forEach(r => (r.pays || []).forEach(p => { if(payMap[p]){ payMap[p].count++; payMap[p].amt += (+r.total || 0); } })); }
+    const prodMap = {};
+    list.forEach(r => (r.items || []).forEach(it => { const name = it.product || '(未命名)'; prodMap[name] = (prodMap[name] || 0) + (+it.qty || 0); }));
+    const prodRank = Object.keys(prodMap).sort((a, b) => prodMap[b] - prodMap[a]).slice(0, 8);
+    let headMap = null;
+    if(B.head){ headMap = {}; list.forEach(r => { const k = r[B.head.key]; if(k) headMap[k] = (headMap[k] || 0) + 1; }); }
+    let deptMap = null;
+    if(B.dept){ deptMap = {}; list.forEach(r => { const k = r.dept; if(k) deptMap[k] = (deptMap[k] || 0) + 1; }); }
+    return {B, list, totalQty, totalAmt, payMap, prodMap, prodRank, headMap, deptMap};
+  },
   bookAnalyze(book, month){
     const B = this.BOOKS[book];
     const list = this.rows(book).filter(r => r.date.slice(0, 7) === month);
