@@ -12,6 +12,7 @@ const LedgerMod = {
   dateFrom: '',                // 时间段起始（YYYY-MM-DD），留空=不限
   dateTo: '',                  // 时间段结束（YYYY-MM-DD），留空=不限
   curOtype: '',                // 月饼门店台账按订购类型分小标签；''=全部
+  curCustType: '',             // 赊账账本按顾客类型分小标签：''=全部 / '门店顾客' / '本院职工' / '单位订购'
   editId: null,
   weekOffset: 0,
   weekCustomStart: '',
@@ -32,7 +33,11 @@ const LedgerMod = {
       pays: true,                    // 收款方式：销售、预订有支付信息
       amount: true,                  // 金额
       deliveryDate: true,            // 取·送货时间 / 生产日期
-      srcNote: '本账本与金山文档《3门店月饼进货、销售、推广产品领取台账》同步：每小时自动同步金山文档最新数据；工作台为只读，请在金山文档中修改（点「🔗 金山文档」按钮可新开标签页直达在线台账）。'}
+      srcNote: '本账本与金山文档《3门店月饼进货、销售、推广产品领取台账》同步：每小时自动同步金山文档最新数据；工作台为只读，请在金山文档中修改（点「🔗 金山文档」按钮可新开标签页直达在线台账）。'},
+    // 赊账账本：虚拟账本，汇集全店未付款/未结账订单
+    unpaid: {title: '赊账账本', icon: '💳', virtual: true,
+      custTypes: ['门店顾客', '本院职工', '单位订购'],
+      srcNote: '汇集全店未付款/未结账订单，按顾客类型分标签。'}
   },
   // 原始数组（用于增删改，含旧格式记录）
   raw(book){
@@ -47,7 +52,7 @@ const LedgerMod = {
   // 按「年 / 时间段 + 订购类型小标签」过滤后的可见记录（render 与导出 CSV 共用）
   filteredList(book){
     const B = this.BOOKS[book];
-    const all = this.rows(book);
+    const all = B.virtual ? this.unpaidRows() : this.rows(book);
     const hasRange = !!(this.dateFrom || this.dateTo);
     let list;
     if(hasRange){
@@ -57,12 +62,36 @@ const LedgerMod = {
     } else {
       list = all.filter(r => r.date.slice(0, 4) === this.year);
     }
-    list = list.slice().sort((a, b) => a.date < b.date ? 1 : -1);
+    list = list.slice().sort((a, b) => a.date > b.date ? 1 : -1);
     if(B.otype && this.curOtype){
       list = list.filter(r => (this.normOtype(r.otype) || (B.otype && B.otype[0]) || '') === this.curOtype);
     }
+    if(B.custTypes && this.curCustType){
+      list = list.filter(r => this.custTypeOf(r._srcBook || '', r) === this.curCustType);
+    }
     return list;
   },
+  // 赊账账本：从所有业务账本聚合未付款/未结账订单，每条附带 _srcBook 标记来源账本
+  unpaidRows(){
+    const out = [];
+    const skipBooks = new Set(['unpaid', 'linfang', 'mooncake']);
+    Object.keys(this.BOOKS).forEach(bk => {
+      if(skipBooks.has(bk)) return;
+      const B = this.BOOKS[bk];
+      this.rows(bk).forEach(r => {
+        if(this.isUnpaid(bk, B, r)){
+          out.push(Object.assign({}, r, {_srcBook: bk, _srcTitle: B.title, _srcIcon: B.icon}));
+        }
+      });
+    });
+    return out;
+  },
+  custTypeOf(book, r){
+    if(book === 'group' || (r.pays && r.pays.includes('单位'))) return '单位订购';
+    if(book === 'reception' || (r.pays && r.pays.includes('院内'))) return '本院职工';
+    return '门店顾客';
+  },
+
   norm(r){
     if(r.items) return r; // 已是新订单结构
     const price = (r.amount && r.qty) ? Math.round(r.amount / r.qty * 100) / 100 : (r.amount || 0);
@@ -88,12 +117,13 @@ const LedgerMod = {
     this.syncAllInitial();
     const hasRange = !!(this.dateFrom || this.dateTo);
     if(!B.otype) this.curOtype = '';
+    if(!B.custTypes) this.curCustType = '';
     const list = this.filteredList(bk);
     let totalQty = 0, totalAmt = 0;
     list.forEach(r => { totalQty += this.qtySum(r); totalAmt += (+r.total || 0); });
 
     const showHead = !!B.head, showPays = !!B.pays, showInv = !!B.inv, showFlags = !!(B.flags && B.flags.length), showDept = !!B.dept;
-    const showOtype = !!(B.otype && !this.curOtype), showContact = !!B.contact, showUnit = !!B.unitField, showDeliveryMethod = !!B.deliveryMethod, showDeliveryDate = !!B.deliveryDate, showDeliveryStatus = !!B.deliveryStatus, showSpecial = !!B.special, showInvTitle = !!B.invTitle;
+    const showOtype = !!(B.otype && !this.curOtype), showCustType = !!(B.custTypes && !this.curCustType), showContact = !!B.contact, showUnit = !!B.unitField, showDeliveryMethod = !!B.deliveryMethod, showDeliveryDate = !!B.deliveryDate, showDeliveryStatus = !!B.deliveryStatus, showSpecial = !!B.special, showInvTitle = !!B.invTitle;
     const showPayStatus = !!B.payStatus, showSalesman = !!B.salesman, showDeposit = !!B.deposit, showSettle = !!B.settle;
     const prodOpts = Store.get('products').items.filter(p => !p.del).map(p => '<option value="' + esc(p.name) + '">').join('');
 
@@ -125,7 +155,15 @@ const LedgerMod = {
         this.distinctOtypes(B, this.rows(bk)).map(ot =>
           '<span class="tab' + (this.curOtype === ot ? ' on' : '') + '" onclick="LedgerMod.curOtype=\'' + esc(ot) + '\';LedgerMod.render()">' + esc(ot) + '</span>').join('') +
         '</div>' : '') +
+      (B.custTypes ? '<div class="tabs cust-type-tabs">' +
+        '<span class="tab' + (!this.curCustType ? ' on' : '') + '" onclick="LedgerMod.curCustType=\'\';LedgerMod.render()">全部</span>' +
+        B.custTypes.map(ct =>
+          '<span class="tab' + (this.curCustType === ct ? ' on' : '') + '" onclick="LedgerMod.curCustType=\'' + esc(ct) + '\';LedgerMod.render()">' + esc(ct) + '</span>').join('') +
+        '</div>' : '') +
       '<div class="card"><h3>' + B.icon + ' ' + B.title + ' · ' + scopeLabel +
+      (B.virtual
+        ? ' <span class="tag" style="font-size:11px">虚拟账本 · 汇集自各业务账本</span>'
+        : '') +
       (B.readOnly
         ? ' <button class="btn sm ghost" style="margin-left:auto" onclick="LedgerMod.manualSync()">🔄 立即同步</button>' +
           (B.kdocsUrl ? ' <button class="btn sm" style="background:var(--accent)" onclick="LedgerMod.openKdocs()">🔗 金山文档</button>' : '')
@@ -163,6 +201,15 @@ const LedgerMod = {
         return '<tr class="grp-row"><td colspan="' + colCount + '">🏷 ' + esc(ot) + ' · ' + sub.length + ' 单 · ' + moneyFmt(sa) + '</td></tr>' +
           sub.map(r => this.orderRow(r, B, o)).join('');
       }).join('');
+    } else if(showCustType){
+      body = B.custTypes.map(ct => {
+        const sub = list.filter(r => this.custTypeOf(r._srcBook || '', r) === ct);
+        if(!sub.length) return '';
+        const sq = sub.reduce((sr, r) => sr + this.qtySum(r), 0);
+        const sa = sub.reduce((sr, r) => sr + (+r.total || 0), 0);
+        return '<tr class="grp-row"><td colspan="' + colCount + '">🏷 ' + esc(ct) + ' · ' + sub.length + ' 单 · ' + moneyFmt(sa) + '</td></tr>' +
+          sub.map(r => this.orderRow(r, B, o)).join('');
+      }).join('');
     } else {
       body = list.map(r => this.orderRow(r, B, o)).join('');
     }
@@ -179,7 +226,7 @@ const LedgerMod = {
     const extraHint = B.otype ? '表格按「订购类型」分小标签（' + B.otype.join(' / ') + '），点击可单独查看某一类，分析区也按当前显示范围统计。' : '';
     const syncHint = this.syncHintFor(bk);
     let analysisHtml;
-    if(hasRange || (B.otype && this.curOtype)){
+    if(B.virtual || hasRange || (B.otype && this.curOtype)){
       analysisHtml = this.renderBookStats(this.analyzeList(B, list));
     } else {
       analysisHtml = this.bookYearSummary(bk, this.year);
@@ -282,11 +329,13 @@ const LedgerMod = {
   // ===== 提醒：每周一未付款订单 + 配送前3天每日待配送 =====
   // 返回该周周一日期串（用于「每周一次」去重键）
   mondayKey(t){ return fmtDate(startOfWeek(parseDate(t))); },
-  // 全账本未付款订单（按账本自身规则判定）
-  isUnpaid(B, r){
+  // 全账本未付款订单（按账本自身规则判定）。book 为账本 key，用于识别无收款字段的本院职工账本。
+  isUnpaid(book, B, r){
     if(B.flags && B.flags.some(f => f.key === 'paid')) return !(r.flags && r.flags.paid);
     if(B.pays) return (r.pays || []).includes('未付款');
     if(B.payStatus) return (r.payStatus || B.payStatus[0]) !== '全款结清';
+    if(B.settle) return (r.settle || B.settle[0]) === '未结账';          // 委托加工：未结账即赊账
+    if(book === 'reception') return true;                                // 院内接待：无收款方式字段，一律视为赊账（本院职工）
     return false;
   },
   allUnpaid(){
@@ -294,7 +343,7 @@ const LedgerMod = {
     Object.keys(this.BOOKS).forEach(bk => {
       const B = this.BOOKS[bk];
       this.rows(bk).forEach(r => {
-        if(this.isUnpaid(B, r)){
+        if(this.isUnpaid(bk, B, r)){
           const who = B.head ? (r[B.head.key] || '') : '';
           out.push('[' + B.icon + B.title + '] ' + r.date + ' · ' + (r.items || []).map(it => it.product).join('/') +
             ' · ' + moneyFmt(r.total || 0) + (who ? (' · ' + who) : ''));
@@ -364,7 +413,7 @@ const LedgerMod = {
     Object.keys(this.BOOKS).forEach(bk => {
       const B = this.BOOKS[bk];
       this.rows(bk).forEach(r => {
-        if(this.isUnpaid(B, r)){
+        if(this.isUnpaid(bk, B, r)){
           (groups[bk] = groups[bk] || []).push(r);
           total++;
         }
@@ -414,7 +463,7 @@ const LedgerMod = {
     if(o.showDeposit && (+r.balance || 0)) bits.push('尾款：' + moneyFmt(r.balance));
     if(r.note) bits.push(r.note);
     if(bits.length) extra = '<div class="muted lg-extra">' + bits.map(x => esc(x)).join('；') + '</div>';
-    return '<tr><td>' + r.date + '</td>' +
+    return '<tr><td>' + r.date + (r._srcIcon ? (' <span class="tag" title="' + esc('\u6765\u81ea' + r._srcTitle) + '">' + r._srcIcon + '</span>') : '') + '</td>' +
       (o.showOtype ? '<td>' + esc(this.normOtype(r.otype) || '—') + '</td>' : '') +
       (o.showContact ? '<td>' + esc(r.contact || '') + '</td>' : '') +
       (o.showSalesman ? '<td>' + esc(r.salesman || '') + '</td>' : '') +

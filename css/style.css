@@ -44,6 +44,10 @@ body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg)
 .otype-tabs{margin-top:-6px;margin-bottom:14px}
 .otype-tabs .tab{background:#e7eef6}
 .otype-tabs .tab.on{background:var(--accent);color:#fff}
+/* 赊账账本按「顾客类型」分小标签 */
+.cust-type-tabs{margin-top:-6px;margin-bottom:14px}
+.cust-type-tabs .tab{background:#fef3e8}
+.cust-type-tabs .tab.on{background:var(--accent);color:#fff}
 .hint{font-size:12.5px;color:var(--muted);margin:6px 0 14px;line-height:1.7}
 .warn-txt{color:var(--accent)}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:16px;box-shadow:0 1px 4px rgba(60,50,30,.05)}
