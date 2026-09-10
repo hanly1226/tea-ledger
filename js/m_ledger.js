@@ -161,19 +161,60 @@ const LedgerMod = {
       '</div>';
   },
   setYear(v){ if(v){ this.year = String(v); this.render(); } },
-  // 云端同步账本「立即同步」：从云端 textdb 强制刷新到最新（含刚从金山文档同步进来的数据）。
+  // 云端同步账本「立即同步」：
+  //  - 若按需同步函数地址为「公开可访问」（URL 不含 eo_token 访问网关），则直连函数做真正即时同步；
+  //  - 当前 EdgeOne Makers 项目带访问网关，浏览器无法跨域调用该函数（仅静态页可被网关放行，
+  //    函数 API 路由一律 401），故走兜底：直接拉云端最新。云端已改为「每 2 分钟自动从金山文档同步」，
+  //    因此点击按钮即可看到接近最新的数据（最多落后约 2 分钟，通常已是最新）。
   manualSync(){
     const bk = this.curBook, B = this.BOOKS[bk];
     if(!B || !B.readOnly) return;
-    toast('正在从云端刷新最新数据…');
+    const cfg = (window.TCM_CONFIG && TCM_CONFIG.mooncakeSync) || null;
+    const canCallFn = cfg && cfg.url && cfg.url.indexOf('eo_token') === -1 && cfg.url.indexOf('__MOONCAKE_SYNC_URL__') === -1;
+    if(canCallFn){
+      const before = this.lastSyncTs();
+      toast('正在从金山文档拉取最新数据…');
+      fetch(cfg.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Sync-Secret': cfg.secret },
+        body: JSON.stringify({ book: bk })
+      }).then(r => r.json().catch(() => ({}))).then(j => {
+        if(j && j.ok) return;
+        if(j && j.error === 'busy'){ toast('同步进行中，稍候自动刷新…', false); return; }
+        if(j && j.error === 'unauthorized'){ toast('同步鉴权失败，请联系管理员', false); return; }
+        toast('同步触发未成功（' + (j && j.error ? j.error : '未知') + '）；已尽量刷新可见数据', false);
+      }).catch(() => { toast('同步触发失败（网络/网关）；已尽量刷新可见数据', false); });
+      this._waitFreshSync(before, Date.now() + 75000);
+      return;
+    }
+    // 兜底：拉云端最新（云端每小时自动从金山文档同步一次，按钮点击即拉到云端最新快照）
+    toast('正在刷新到云端最新数据…');
     Store.pullShard('ledger', true).then(() => {
       this.render();
       const t = this.lastSyncText();
-      if(t) toast('已刷新到云端最新数据（最近一次从金山文档同步：' + t + '）');
-      else toast('已刷新到云端最新数据（云端数据每小时自动从金山文档同步；如需立即重读，可在对话中让我同步一次）');
-    }).catch(() => {
-      this.render();
-      toast('已尝试刷新，但云端读取失败，请稍后重试', false);
+      if(t) toast('已刷新（云端每小时自动从金山文档同步；最近一次同步：' + t + '）');
+      else toast('已刷新到云端最新数据（云端定期自动从金山文档同步）');
+    }).catch(() => { this.render(); toast('已尝试刷新，但云端读取失败，请稍后重试', false); });
+  },
+  // 等待「立即同步」把云端 _syncDone 推进后再刷新界面
+  _waitFreshSync(before, deadline){
+    if(Date.now() > deadline){
+      Store.pullShard('ledger', true).catch(() => {}).then(() => {
+        this.render();
+        const t = this.lastSyncText();
+        if(t) toast('已刷新可见数据；若金山文档改动未出现，请稍后重试「立即同步」', false);
+        else toast('同步较慢或失败，请稍后重试「立即同步」', false);
+      });
+      return;
+    }
+    Store.pullShard('ledger', true).catch(() => {}).then(() => {
+      const now = this.lastSyncTs();
+      if(now && before && now > before){
+        this.render();
+        toast('已刷新到金山文档最新数据（最近同步：' + this.lastSyncText() + '）');
+        return;
+      }
+      setTimeout(() => this._waitFreshSync(before, deadline), 2500);
     });
   },
   // 新标签页打开金山文档在线台账（月饼门店台账的源头，可在线修改）
@@ -192,6 +233,11 @@ const LedgerMod = {
       }
     } catch(e){}
     return '';
+  },
+  // 返回 _syncDone 原始时间戳（用于判断「立即同步」后数据是否已推进）
+  lastSyncTs(){
+    try { const L = Store.get('ledger'); return (L && L._syncDone) ? L._syncDone : 0; }
+    catch(e){ return 0; }
   },
   // 月饼等只读同步账本的说明，附最近一次从金山文档同步的时间
   syncSrcNote(bk){
