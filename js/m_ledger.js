@@ -49,6 +49,17 @@ const LedgerMod = {
   rows(book){
     return this.raw(book).filter(r => !r.del).map(r => this.norm(r));
   },
+  // 将任意日期字符串规范为可比较/分组的 YYYY-MM-DD（补齐月日的前导零）。
+  // 月饼台账日期来自金山文档原始文本（如 2026-9-10 / 2026/9-10 / 2026年9月10日），未补零会导致字符串排序、按月分组错乱；
+  // 其它台账用 input[type=date] 已是标准格式。集中在此归一，排序与筛选均走 dateKey。
+  dateKey(d){
+    if(!d) return '';
+    let m = /^(\d{4})[-/.年](\d{1,2})[-/.月](\d{1,2})/.exec(d);
+    if(m) return m[1] + '-' + String(m[2]).padStart(2, '0') + '-' + String(m[3]).padStart(2, '0');
+    m = /^(\d{4})(\d{2})(\d{2})$/.exec(d);
+    if(m) return m[1] + '-' + m[2] + '-' + m[3];
+    return d;
+  },
   // 按「年 / 时间段 + 订购类型小标签」过滤后的可见记录（render 与导出 CSV 共用）
   filteredList(book){
     const B = this.BOOKS[book];
@@ -58,11 +69,11 @@ const LedgerMod = {
     if(hasRange){
       const from = this.dateFrom || '0000-01-01';
       const to = this.dateTo || '9999-12-31';
-      list = all.filter(r => r.date >= from && r.date <= to);
+      list = all.filter(r => { const dk = this.dateKey(r.date); return /^\d{4}-\d{2}-\d{2}$/.test(dk) && dk >= this.dateKey(from) && dk <= this.dateKey(to); });
     } else {
-      list = all.filter(r => r.date.slice(0, 4) === this.year);
+      list = all.filter(r => this.dateKey(r.date).slice(0, 4) === this.year);
     }
-    list = list.slice().sort((a, b) => a.date < b.date ? 1 : -1);
+    list = list.slice().sort((a, b) => this.dateKey(a.date) < this.dateKey(b.date) ? 1 : -1);
     if(B.otype && this.curOtype){
       list = list.filter(r => (this.normOtype(r.otype) || (B.otype && B.otype[0]) || '') === this.curOtype);
     }
@@ -999,7 +1010,7 @@ const LedgerMod = {
       ? ((this.dateFrom || '起') + '_' + (this.dateTo || '止'))
       : (this.year + '年');
     const orders = this.filteredList(this.curBook)
-      .sort((a, b) => a.date < b.date ? 1 : -1);
+      .sort((a, b) => this.dateKey(a.date) < this.dateKey(b.date) ? 1 : -1);
     const showHead = !!B.head, showPays = !!B.pays, showInv = !!B.inv, showFlags = !!(B.flags && B.flags.length);
     const showOtype = !!B.otype, showContact = !!B.contact, showUnit = !!B.unitField, showDeliveryMethod = !!B.deliveryMethod, showDeliveryDate = !!B.deliveryDate, showDeliveryStatus = !!B.deliveryStatus, showSpecial = !!B.special, showInvTitle = !!B.invTitle;
     const showPayStatus = !!B.payStatus, showSalesman = !!B.salesman, showDeposit = !!B.deposit, showSettle = !!B.settle, showDept = !!B.dept;
@@ -1273,7 +1284,7 @@ const LedgerMod = {
   },
   bookAnalyze(book, month){
     const B = this.BOOKS[book];
-    const list = this.rows(book).filter(r => r.date.slice(0, 7) === month);
+    const list = this.rows(book).filter(r => this.dateKey(r.date).slice(0, 7) === month);
     let totalQty = 0, totalAmt = 0;
     list.forEach(r => { totalQty += this.qtySum(r); totalAmt += (+r.total || 0); });
     // 收款方式分布（笔数 / 金额）
@@ -1432,7 +1443,7 @@ const LedgerMod = {
   bookYearAnalyze(book, year){
     const B = this.BOOKS[book];
     const y = String(year);
-    const list = this.rows(book).filter(r => r.date.slice(0, 4) === y);
+    const list = this.rows(book).filter(r => this.dateKey(r.date).slice(0, 4) === y);
     let totalQty = 0, totalAmt = 0;
     const months = {}; const payMap = {};
     const payKeys = (Array.isArray(B.pays) ? B.pays.slice() : []);
@@ -1440,7 +1451,7 @@ const LedgerMod = {
     payKeys.forEach(p => payMap[p] = {count: 0, amt: 0});
     list.forEach(r => {
       totalQty += this.qtySum(r); totalAmt += (+r.total || 0);
-      const m = r.date.slice(0, 7);
+      const m = this.dateKey(r.date).slice(0, 7);
       if(!months[m]) months[m] = {qty: 0, amt: 0};
       months[m].qty += this.qtySum(r); months[m].amt += (+r.total || 0);
       if(B.pays) (r.pays || []).forEach(p => { if(payMap[p]){ payMap[p].count++; payMap[p].amt += (+r.total || 0); } });
