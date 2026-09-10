@@ -20,7 +20,7 @@ const LedgerMod = {
   BOOKS: {
     linfang:  {title: '临方中心产品入库登记', icon: '📦', pays: null, amount: true},
     sales:    {title: '中药茶饮销售登记', icon: '🍵', pays: ['微信/支付宝', '小程序', '现金', '挂号', '食堂卡', '未付款', '院内', '单位'], amount: true},
-    reception:{title: '院内接待推广产品登记', icon: '🤝', amount: true, pays: ['未付款', '院内', '现金'], head: {key: 'contact', label: '联系人'}, dept: {label: '科室', opts: ['中医科','康复科','理疗科','护理部','治未病科','营养科']}},
+    reception:{title: '院内接待推广产品登记', icon: '🤝', amount: true, head: {key: 'contact', label: '联系人'}, dept: {label: '科室', opts: ['中医科','康复科','理疗科','护理部','治未病科','营养科']}},
     bracelet: {title: '合香产品销售登记', icon: '📿', pays: ['微信/支付宝', '小程序', '现金', '挂号', '食堂卡', '未付款', '院内', '单位'], amount: true},
     group:    {title: '单位订购产品登记', icon: '🛒', pays: ['扫码（伊尹）', '转账（伊尹）', '扫码（伊云本草）', '转账（伊云本草）', '小程序', '未付款'], amount: true, head: {key: 'unit', label: '单位'}, inv: true, invOpts: ['普票', '专票', '暂不开发票'], deliveryMethod: ['自提', '门店配送', '快递'], deliveryDate: true, deliveryStatus: ['未配送', '配送']},
     commission:{title: '委托加工产品入库登记', icon: '🏭', settle: ['未结账', '已结账'], amount: true, head: {key: 'processor', label: '加工方', select: true}, deposit: true},
@@ -62,7 +62,7 @@ const LedgerMod = {
     } else {
       list = all.filter(r => r.date.slice(0, 4) === this.year);
     }
-    list = list.slice().sort((a, b) => a.date > b.date ? 1 : -1);
+    list = list.slice().sort((a, b) => a.date < b.date ? 1 : -1);
     if(B.otype && this.curOtype){
       list = list.filter(r => (this.normOtype(r.otype) || (B.otype && B.otype[0]) || '') === this.curOtype);
     }
@@ -999,7 +999,7 @@ const LedgerMod = {
       ? ((this.dateFrom || '起') + '_' + (this.dateTo || '止'))
       : (this.year + '年');
     const orders = this.filteredList(this.curBook)
-      .sort((a, b) => a.date < b.date ? -1 : 1);
+      .sort((a, b) => a.date < b.date ? 1 : -1);
     const showHead = !!B.head, showPays = !!B.pays, showInv = !!B.inv, showFlags = !!(B.flags && B.flags.length);
     const showOtype = !!B.otype, showContact = !!B.contact, showUnit = !!B.unitField, showDeliveryMethod = !!B.deliveryMethod, showDeliveryDate = !!B.deliveryDate, showDeliveryStatus = !!B.deliveryStatus, showSpecial = !!B.special, showInvTitle = !!B.invTitle;
     const showPayStatus = !!B.payStatus, showSalesman = !!B.salesman, showDeposit = !!B.deposit, showSettle = !!B.settle, showDept = !!B.dept;
