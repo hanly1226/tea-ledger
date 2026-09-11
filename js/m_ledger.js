@@ -109,13 +109,16 @@ const LedgerMod = {
     if(book === 'reception' || (r.pays && r.pays.includes('院内'))) return '本院职工';
     return '门店顾客';
   },
-  // 赊账方名称（虚拟账本每行显示）：优先取来源账本里记录的单位/姓名/联系人；均无则回退到顾客类型标签
+  // 赊账方名称（虚拟账本每行显示）：优先取来源账本里记录的单位/姓名，并一并带出联系人；均无则回退到顾客类型标签
   debtorName(r){
     const bk = r._srcBook || '';
-    if(bk === 'group') return r.unit || this.custTypeOf(bk, r);
-    if(bk === 'linfangPre') return r.name || '';
-    if(r.contact) return r.contact;
-    return this.custTypeOf(bk, r);
+    let base = '';
+    if(bk === 'group') base = r.unit || '';
+    else if(bk === 'linfangPre') base = r.name || '';
+    else if(r.contact) base = r.contact;
+    if(r.contact && base && r.contact !== base) return base + '（' + r.contact + '）';
+    if(r.contact && !base) return r.contact;
+    return base || this.custTypeOf(bk, r);
   },
 
   norm(r){
