@@ -2,6 +2,8 @@
 // ============ 6️⃣ 运营台账 ============
 // 所有账本统一为「订单」模型：一个订单可含多种产品，每项含单价/数量/小计，自动合计总价。
 const INV_OPTS = ['增值税普通发票', '增值税专用发票', '电子发票', '暂不开发票'];
+// 登记人下拉选项（于 / 魏 / 韩）
+const REGISTRANTS = ['于', '魏', '韩'];
 // 订购类型别名归一：历史「员工」与现行「职工」视为同一类，统一并入「职工」
 const OTYPE_ALIAS = { '员工': '职工' };
 const LedgerMod = {
@@ -18,19 +20,19 @@ const LedgerMod = {
   weekCustomStart: '',
   weekCustomLen: 7,
   BOOKS: {
-    linfang:  {title: '临方中心产品入库登记', icon: '📦', pays: null, amount: true},
+    linfang:  {title: '临方中心产品入库登记', icon: '📦', pays: null, amount: true, registrant: REGISTRANTS},
     linfangPre: {title: '临方产品预定登记', icon: '📝',
       // 临方产品预定：姓名/手机号/产品/单价/金额/收款方式/取货方式/是否取货（收款方式同茶饮·合香销售账本）
       pays: ['微信/支付宝', '小程序', '现金', '挂号', '食堂卡', '未付款', '院内', '单位'], amount: true,
       head: {key: 'name', label: '姓名'},
       phone: true,
       deliveryMethod: ['自取', '邮寄'], deliveryMethodLabel: '取货方式',
-      deliveryStatus: ['未取货', '已取货'], deliveryStatusLabel: '是否取货'},
-    sales:    {title: '中药茶饮销售登记', icon: '🍵', pays: ['微信/支付宝', '小程序', '现金', '挂号', '食堂卡', '未付款', '院内', '单位'], amount: true},
-    reception:{title: '院内接待推广产品登记', icon: '🤝', amount: true, head: {key: 'contact', label: '联系人'}, dept: {label: '科室', opts: ['中医科','康复科','理疗科','护理部','治未病科','营养科']}},
-    bracelet: {title: '合香产品销售登记', icon: '📿', pays: ['微信/支付宝', '小程序', '现金', '挂号', '食堂卡', '未付款', '院内', '单位'], amount: true},
-    group:    {title: '单位订购产品登记', icon: '🛒', pays: ['扫码（伊尹）', '转账（伊尹）', '扫码（伊云本草）', '转账（伊云本草）', '小程序', '未付款'], amount: true, contact: true, head: {key: 'unit', label: '单位'}, inv: true, invOpts: ['普票', '专票', '暂不开发票'], deliveryMethod: ['自提', '门店配送', '快递'], deliveryDate: true, deliveryStatus: ['未配送', '配送']},
-    commission:{title: '委托加工产品入库登记', icon: '🏭', settle: ['未结账', '已结账'], amount: true, head: {key: 'processor', label: '加工方', select: true}, deposit: true},
+      deliveryStatus: ['未取货', '已取货'], deliveryStatusLabel: '是否取货', registrant: REGISTRANTS},
+    sales:    {title: '中药茶饮销售登记', icon: '🍵', pays: ['微信/支付宝', '小程序', '现金', '挂号', '食堂卡', '未付款', '院内', '单位'], amount: true, registrant: REGISTRANTS},
+    reception:{title: '院内接待推广产品登记', icon: '🤝', amount: true, head: {key: 'contact', label: '联系人'}, dept: {label: '科室', opts: ['中医科','康复科','理疗科','护理部','治未病科','营养科']}, registrant: REGISTRANTS},
+    bracelet: {title: '合香产品销售登记', icon: '📿', pays: ['微信/支付宝', '小程序', '现金', '挂号', '食堂卡', '未付款', '院内', '单位'], amount: true, registrant: REGISTRANTS},
+    group:    {title: '单位订购产品登记', icon: '🛒', pays: ['扫码（伊尹）', '转账（伊尹）', '扫码（伊云本草）', '转账（伊云本草）', '小程序', '未付款'], amount: true, contact: true, head: {key: 'unit', label: '单位'}, inv: true, invOpts: ['普票', '专票', '暂不开发票'], deliveryMethod: ['自提', '门店配送', '快递'], deliveryDate: true, deliveryStatus: ['未配送', '配送'], registrant: REGISTRANTS},
+    commission:{title: '委托加工产品入库登记', icon: '🏭', settle: ['未结账', '已结账'], amount: true, head: {key: 'processor', label: '加工方', select: true}, deposit: true, registrant: REGISTRANTS},
     // 月饼门店台账：与金山文档《3门店月饼进货、销售、推广产品领取台账》同步（只读镜像，每小时自动从金山同步）。
     mooncake: {title: '月饼门店台账', icon: '🥮',
       readOnly: true,
@@ -126,7 +128,7 @@ const LedgerMod = {
     const price = (r.amount && r.qty) ? Math.round(r.amount / r.qty * 100) / 100 : (r.amount || 0);
     return {
       id: r.id, date: r.date, t: r.t, del: r.del,
-      otype: '', unit: '', contact: '', salesman: '',
+      otype: '', unit: '', contact: '', salesman: '', registrant: '',
       delivery: '', deliveryDate: '', deliveryStatus: '', special: '', invTitle: '',
       deposit: 0, balance: 0, payStatus: '', settle: r.settle || '',
       items: [{product: r.product || '', price: price, qty: r.qty || 0, amount: r.amount || 0}],
@@ -153,7 +155,7 @@ const LedgerMod = {
 
     const showHead = !!B.head, showPays = !!B.pays, showInv = !!B.inv, showFlags = !!(B.flags && B.flags.length), showDept = !!B.dept;
     const showOtype = !!(B.otype && !this.curOtype), showCustType = !!(B.custTypes && !this.curCustType), showContact = !!B.contact, showUnit = !!B.unitField, showDeliveryMethod = !!B.deliveryMethod, showDeliveryDate = !!B.deliveryDate, showDeliveryStatus = !!B.deliveryStatus, showSpecial = !!B.special, showInvTitle = !!B.invTitle, showPhone = !!B.phone, showDebtor = !!B.virtual;
-    const showPayStatus = !!B.payStatus, showSalesman = !!B.salesman, showDeposit = !!B.deposit, showSettle = !!B.settle;
+    const showPayStatus = !!B.payStatus, showSalesman = !!B.salesman, showDeposit = !!B.deposit, showSettle = !!B.settle, showRegistrant = !!B.registrant;
     const prodOpts = Store.get('products').items.filter(p => !p.del).map(p => '<option value="' + esc(p.name) + '">').join('');
 
     const scopeLabel = hasRange
@@ -199,9 +201,10 @@ const LedgerMod = {
         : (B.virtual ? '' : ' <button class="btn sm" style="margin-left:auto" onclick="LedgerMod.addNew()">＋ 登记</button>')) + '</h3>' +
       (B.srcNote ? '<div class="sync-note">🔄 ' + esc(this.syncSrcNote(bk)) + '</div>' : '');
 
-    const o = {showHead, showPays, showInv, showFlags, showOtype, showContact, showUnit, showDeliveryMethod, showDeliveryDate, showDeliveryStatus, showSpecial, showInvTitle, showSalesman, showPayStatus, showDeposit, showSettle, showDept, showPhone, showDebtor};
-    const colCount = 1 + (showOtype?1:0) + (showContact?1:0) + (showSalesman?1:0) + (showUnit?1:0) + (showHead?1:0) + (showPhone?1:0) + (showDebtor?1:0) + 1 + 1 + (B.amount?1:0) + (showPays?1:0) + (showPayStatus?1:0) + (showSettle?1:0) + (showDept?1:0) + (showDeliveryMethod?1:0) + (showDeliveryDate?1:0) + (showDeliveryStatus?1:0) + (showFlags?B.flags.length:0) + (showInv?1:0) + (B.readOnly?0:1);
+    const o = {showHead, showPays, showInv, showFlags, showOtype, showContact, showUnit, showDeliveryMethod, showDeliveryDate, showDeliveryStatus, showSpecial, showInvTitle, showSalesman, showPayStatus, showDeposit, showSettle, showDept, showPhone, showDebtor, showRegistrant};
+    const colCount = 1 + (showOtype?1:0) + (showContact?1:0) + (showSalesman?1:0) + (showUnit?1:0) + (showHead?1:0) + (showPhone?1:0) + (showDebtor?1:0) + (showRegistrant?1:0) + 1 + 1 + (B.amount?1:0) + (showPays?1:0) + (showPayStatus?1:0) + (showSettle?1:0) + (showDept?1:0) + (showDeliveryMethod?1:0) + (showDeliveryDate?1:0) + (showDeliveryStatus?1:0) + (showFlags?B.flags.length:0) + (showInv?1:0) + (B.readOnly?0:1);
     const thead = '<thead><tr><th>' + (B.dateLabel || '日期') + '</th>' +
+      (showRegistrant ? '<th>登记人</th>' : '') +
       (showDebtor ? '<th>赊账方</th>' : '') +
       (showOtype ? '<th>订购类型</th>' : '') +
       (showContact ? '<th>联系人</th>' : '') +
@@ -246,6 +249,7 @@ const LedgerMod = {
     }
 
     const tfoot = '<tfoot><tr><td>合计</td>' +
+      (showRegistrant ? '<td></td>' : '') +
       (showOtype ? '<td></td>' : '') + (showContact ? '<td></td>' : '') + (showSalesman ? '<td></td>' : '') + (showUnit ? '<td></td>' : '') +
       (showHead ? '<td></td>' : '') +
       (showPhone ? '<td></td>' : '') +
@@ -495,6 +499,7 @@ const LedgerMod = {
     if(r.note) bits.push(r.note);
     if(bits.length) extra = '<div class="muted lg-extra">' + bits.map(x => esc(x)).join('；') + '</div>';
     return '<tr><td>' + r.date + (r._srcIcon ? (' <span class="tag" title="' + esc('\u6765\u81ea' + r._srcTitle) + '">' + r._srcIcon + '</span>') : '') + '</td>' +
+      (o.showRegistrant ? '<td>' + esc(r.registrant || '') + '</td>' : '') +
       (o.showDebtor ? '<td>' + esc(this.debtorName(r)) + '</td>' : '') +
       (o.showOtype ? '<td>' + esc(this.normOtype(r.otype) || '—') + '</td>' : '') +
       (o.showContact ? '<td>' + esc(r.contact || '') + '</td>' : '') +
@@ -595,6 +600,8 @@ const LedgerMod = {
       B.otype.map(t => '<option value="' + esc(t) + '"' + ((rec && rec.otype === t) ? ' selected' : '') + '>' + esc(t) + '</option>').join('') + '</select></div>' : '';
     const contactHtml = B.contact ? '<div class="lg-fld"><label>联系人</label><input autocomplete="off" id="lg-contact" value="' + ((rec && rec.contact) ? esc(rec.contact) : '') + '" placeholder="选填"></div>' : '';
     const salesmanHtml = B.salesman ? '<div class="lg-fld"><label>推销员姓名</label><input autocomplete="off" id="lg-salesman" value="' + ((rec && rec.salesman) ? esc(rec.salesman) : '') + '" placeholder="选填（谁经手这笔订单）"></div>' : '';
+    const registrantHtml = B.registrant ? '<div class="lg-fld"><label>登记人</label><select id="lg-registrant">' +
+      B.registrant.map(p => '<option value="' + esc(p) + '"' + ((rec && rec.registrant === p) ? ' selected' : '') + '>' + esc(p) + '</option>').join('') + '</select></div>' : '';
     const unitHtml = B.unitField ? '<div class="lg-fld" id="lg-unit-row"' + ((rec && rec.otype && B.otypeUnit && !B.otypeUnit[rec.otype]) ? ' style="display:none"' : '') + '><label>单位 / 渠道</label><input autocomplete="off" id="lg-unit" value="' + ((rec && rec.unit) ? esc(rec.unit) : '') + '" placeholder="企业单位或批发渠道名称"></div>' : '';
     const invTitleShow = B.invTitle && rec && Array.isArray(rec.inv) && rec.inv.some(v => v.indexOf('暂不开发') === -1);
     const invTitleHtml = B.invTitle ? '<div class="lg-fld" id="lg-invtitle-row"' + (invTitleShow ? '' : ' style="display:none"') + '><label>发票抬头</label><input autocomplete="off" id="lg-invtitle" value="' + ((rec && rec.invTitle) ? esc(rec.invTitle) : '') + '" placeholder="开票抬头（单位全称）"></div>' : '';
@@ -616,6 +623,7 @@ const LedgerMod = {
       '<h3>' + B.icon + ' ' + (id ? '编辑订单' : '登记订单') + ' · ' + esc(B.title) + '</h3>' +
       '<div class="lg-form">' +
         '<div class="lg-fld"><label>' + (B.dateLabel || '日期') + '</label><input autocomplete="off" type="date" id="lg-date" value="' + (rec ? rec.date : todayStr()) + '"></div>' +
+        registrantHtml +
         otypeHtml +
         contactHtml +
         salesmanHtml +
@@ -956,6 +964,7 @@ const LedgerMod = {
       unit: B.unitField ? ($('#lg-unit').value.trim() || '') : '',
       contact: B.contact ? ($('#lg-contact').value.trim() || '') : '',
       salesman: B.salesman ? ($('#lg-salesman').value.trim() || '') : '',
+      registrant: B.registrant ? ($('#lg-registrant').value || '') : '',
       phone: B.phone ? ($('#lg-phone').value.trim() || '') : '',
       delivery: B.deliveryMethod ? ($('#lg-delivery').value || '') : '',
       deliveryDate: B.deliveryDate ? ($('#lg-deliveryDate').value || '') : '',
@@ -1054,8 +1063,9 @@ const LedgerMod = {
       .sort((a, b) => this.dateKey(a.date) < this.dateKey(b.date) ? 1 : -1);
     const showHead = !!B.head, showPays = !!B.pays, showInv = !!B.inv, showFlags = !!(B.flags && B.flags.length);
     const showOtype = !!B.otype, showContact = !!B.contact, showUnit = !!B.unitField, showDeliveryMethod = !!B.deliveryMethod, showDeliveryDate = !!B.deliveryDate, showDeliveryStatus = !!B.deliveryStatus, showSpecial = !!B.special, showInvTitle = !!B.invTitle, showPhone = !!B.phone, showDebtor = !!B.virtual;
-    const showPayStatus = !!B.payStatus, showSalesman = !!B.salesman, showDeposit = !!B.deposit, showSettle = !!B.settle, showDept = !!B.dept;
+    const showPayStatus = !!B.payStatus, showSalesman = !!B.salesman, showDeposit = !!B.deposit, showSettle = !!B.settle, showDept = !!B.dept, showRegistrant = !!B.registrant;
     const head = [(B.dateLabel || '日期')]
+      .concat(showRegistrant ? ['登记人'] : [])
       .concat(showDebtor ? ['赊账方'] : [])
       .concat(showOtype ? ['订购类型'] : [])
       .concat(showContact ? ['联系人'] : [])
@@ -1080,6 +1090,7 @@ const LedgerMod = {
     const lines = [head.join(',')].concat(orders.flatMap(r =>
       (r.items || []).map(it =>
         [r.date]
+        .concat(showRegistrant ? [r.registrant || ''] : [])
         .concat(showDebtor ? [this.debtorName(r) || ''] : [])
         .concat(showOtype ? [r.otype || ''] : [])
         .concat(showContact ? [r.contact || ''] : [])
@@ -1112,6 +1123,7 @@ const LedgerMod = {
   downloadLedgerTemplate(book){
     const B = this.BOOKS[book];
     const cols = ['日期'];
+    if(B.registrant) cols.push('登记人');
     if(B.otype) cols.push('订购类型');
     if(B.contact) cols.push('联系人');
     if(B.salesman) cols.push('推销员');
@@ -1133,6 +1145,7 @@ const LedgerMod = {
     if(B.inv) cols.push('发票');
     cols.push('备注');
     const ex = ['2026-08-01'];
+    if(B.registrant) ex.push(B.registrant[0]);
     if(B.otype) ex.push(B.otype[0]);
     if(B.contact) ex.push('示例联系人');
     if(B.salesman) ex.push('示例推销员');
@@ -1206,6 +1219,7 @@ const LedgerMod = {
     if(/日期|时间/.test(h) && !/星期|周/.test(h)) return 'date';
     if(B.otype && (/订购类型/.test(h) || /类型/.test(h))) return 'otype';
     if(B.contact && /联系人/.test(h)) return 'contact';
+    if(B.registrant && /(登记人|经手人|记录人|录单人|录入人)/.test(h)) return 'registrant';
     if(B.salesman && /(推销员|业务员|销售员|经手人)/.test(h)) return 'salesman';
     if(B.payStatus && /(收款状态|收付款状态|收款情况)/.test(h)) return 'payStatus';
     if(B.settle && /(结账方式|结算方式|结账)/.test(h)) return 'settle';
@@ -1238,7 +1252,7 @@ const LedgerMod = {
     const book = this._importBook, B = this.BOOKS[book];
     if(!rows || !rows.length){ toast('文件为空或无法识别', false); return; }
     const first = rows[0];
-    const fields = {date: null, head: null, otype: null, contact: null, salesman: null, unit: null, product: null, price: null, qty: null, pays: null, delivery: null, deliveryDate: null, deliveryStatus: null, inv: null, invTitle: null, special: null, paid: null, invoice: null, payStatus: null, settle: null, deposit: null, balance: null, dept: null, phone: null, note: null};
+    const fields = {date: null, head: null, otype: null, contact: null, salesman: null, registrant: null, unit: null, product: null, price: null, qty: null, pays: null, delivery: null, deliveryDate: null, deliveryStatus: null, inv: null, invTitle: null, special: null, paid: null, invoice: null, payStatus: null, settle: null, deposit: null, balance: null, dept: null, phone: null, note: null};
     Object.keys(first).forEach(k => { const f = this.mapLedgerField(k, B); if(f && !fields[f]) fields[f] = k; });
     if(!fields.date){ toast('未找到「日期」列，请含表头：日期 / 产品 / 数量', false); return; }
     if(!fields.product || !fields.qty){ toast('未识别到「产品」「数量」列，请检查表头', false); return; }
@@ -1258,6 +1272,7 @@ const LedgerMod = {
       const otype = fields.otype ? String(r[fields.otype] == null ? '' : r[fields.otype]).trim() : (B.otype ? B.otype[0] : '');
       const contact = fields.contact ? String(r[fields.contact] == null ? '' : r[fields.contact]).trim() : '';
       const salesman = fields.salesman ? String(r[fields.salesman] == null ? '' : r[fields.salesman]).trim() : '';
+      const registrant = fields.registrant ? String(r[fields.registrant] == null ? '' : r[fields.registrant]).trim() : '';
       const phone = fields.phone ? String(r[fields.phone] == null ? '' : r[fields.phone]).trim() : '';
       const unit = fields.unit ? String(r[fields.unit] == null ? '' : r[fields.unit]).trim() : '';
       const delivery = fields.delivery ? String(r[fields.delivery] == null ? '' : r[fields.delivery]).trim() : '';
@@ -1281,7 +1296,7 @@ const LedgerMod = {
         }
       }
       const row = {id: uid(), date: d, t: Date.now(), del: false,
-        otype: B.otype ? otype : '', unit, contact, salesman, phone, dept, delivery, deliveryDate, deliveryStatus, special, invTitle,
+        otype: B.otype ? otype : '', unit, contact, salesman, registrant, phone, dept, delivery, deliveryDate, deliveryStatus, special, invTitle,
         deposit: B.deposit ? deposit : 0, balance: B.deposit ? balance : 0,
         payStatus: B.payStatus ? payStatus : '',
         settle: B.settle ? settle : '',
@@ -1293,15 +1308,15 @@ const LedgerMod = {
     });
     if(!out.length){ toast('没有可导入的有效行（需 日期+产品+数量，如 2026-08-01）', false); return; }
     this._ledgerImport = {book, rows: out};
-    const colHead = '<th>日期</th>' + (B.otype ? '<th>订购类型</th>' : '') + (B.head ? '<th>' + esc(B.head.label) + '</th>' : '') + (B.phone ? '<th>手机号</th>' : '') + '<th>产品</th><th>数量</th><th>金额</th>';
+    const colHead = '<th>日期</th>' + (B.otype ? '<th>订购类型</th>' : '') + (B.registrant ? '<th>登记人</th>' : '') + (B.head ? '<th>' + esc(B.head.label) + '</th>' : '') + (B.phone ? '<th>手机号</th>' : '') + '<th>产品</th><th>数量</th><th>金额</th>';
     const sample = out.slice(0, 8).map(r =>
-      '<tr><td>' + r.date + '</td>' + (B.otype ? '<td>' + esc(r.otype || '—') + '</td>' : '') + (B.head ? '<td>' + esc(r[B.head.key] || '') + '</td>' : '') + (B.phone ? '<td>' + esc(r.phone || '') + '</td>' : '') +
+      '<tr><td>' + r.date + '</td>' + (B.otype ? '<td>' + esc(r.otype || '—') + '</td>' : '') + (B.registrant ? '<td>' + esc(r.registrant || '') + '</td>' : '') + (B.head ? '<td>' + esc(r[B.head.key] || '') + '</td>' : '') + (B.phone ? '<td>' + esc(r.phone || '') + '</td>' : '') +
       '<td>' + esc(r.items[0].product) + '</td><td>' + r.items[0].qty + '</td><td class="amt">' + moneyFmt(r.total) + '</td></tr>').join('');
     openModal('<h3>📥 确认导入「' + esc(B.title) + '」</h3>' +
       '<div class="hint">识别到 <b>' + out.length + '</b> 行有效订单（每行=含一种产品的订单；已忽略缺日期/产品/数量的行）。导入后随云端全店共享。</div>' +
       '<div class="add-row"><label class="chk-row"><input autocomplete="off" type="checkbox" id="lg-ov" checked> 追加到现有记录（取消则先清空该账本全部记录再导入）</label></div>' +
       '<div style="max-height:220px;overflow:auto"><table class="tbl"><thead><tr>' + colHead + '</tr></thead><tbody>' + sample +
-      (out.length > 8 ? '<tr><td colspan="' + (5 + (B.otype ? 1 : 0) + (B.head ? 1 : 0) + (B.phone ? 1 : 0)) + '" class="empty">…仅显示前 8 行</td></tr>' : '') + '</tbody></table></div>' +
+      (out.length > 8 ? '<tr><td colspan="' + (5 + (B.otype ? 1 : 0) + (B.registrant ? 1 : 0) + (B.head ? 1 : 0) + (B.phone ? 1 : 0)) + '" class="empty">…仅显示前 8 行</td></tr>' : '') + '</tbody></table></div>' +
       '<div class="modal-btns"><button class="btn ghost" onclick="closeModal()">取消</button>' +
       '<button class="btn" onclick="LedgerMod.confirmLedgerImport()">导入 ' + out.length + ' 行</button></div>');
   },
