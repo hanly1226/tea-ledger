@@ -204,7 +204,6 @@ const LedgerMod = {
     const o = {showHead, showPays, showInv, showFlags, showOtype, showContact, showUnit, showDeliveryMethod, showDeliveryDate, showDeliveryStatus, showSpecial, showInvTitle, showSalesman, showPayStatus, showDeposit, showSettle, showDept, showPhone, showDebtor, showRegistrant};
     const colCount = 1 + (showOtype?1:0) + (showContact?1:0) + (showSalesman?1:0) + (showUnit?1:0) + (showHead?1:0) + (showPhone?1:0) + (showDebtor?1:0) + (showRegistrant?1:0) + 1 + 1 + (B.amount?1:0) + (showPays?1:0) + (showPayStatus?1:0) + (showSettle?1:0) + (showDept?1:0) + (showDeliveryMethod?1:0) + (showDeliveryDate?1:0) + (showDeliveryStatus?1:0) + (showFlags?B.flags.length:0) + (showInv?1:0) + (B.readOnly?0:1);
     const thead = '<thead><tr><th>' + (B.dateLabel || '日期') + '</th>' +
-      (showRegistrant ? '<th>登记人</th>' : '') +
       (showDebtor ? '<th>赊账方</th>' : '') +
       (showOtype ? '<th>订购类型</th>' : '') +
       (showContact ? '<th>联系人</th>' : '') +
@@ -221,7 +220,8 @@ const LedgerMod = {
       (showDeliveryDate ? '<th>配送日期</th>' : '') +
       (showDeliveryStatus ? '<th>' + (B.deliveryStatusLabel || '配送状态') + '</th>' : '') +
       (showFlags ? B.flags.map(f => '<th>' + esc(f.label) + '</th>').join('') : '') +
-      (showInv ? '<th>发票</th>' : '') + (B.readOnly ? '' : '<th></th>') + '</tr></thead>';
+      (showInv ? '<th>发票</th>' : '') +
+      (showRegistrant ? '<th>登记人</th>' : '') + (B.readOnly ? '' : '<th></th>') + '</tr></thead>';
 
     let body;
     if(!list.length){
@@ -249,7 +249,6 @@ const LedgerMod = {
     }
 
     const tfoot = '<tfoot><tr><td>合计</td>' +
-      (showRegistrant ? '<td></td>' : '') +
       (showOtype ? '<td></td>' : '') + (showContact ? '<td></td>' : '') + (showSalesman ? '<td></td>' : '') + (showUnit ? '<td></td>' : '') +
       (showHead ? '<td></td>' : '') +
       (showPhone ? '<td></td>' : '') +
@@ -258,7 +257,7 @@ const LedgerMod = {
       '<td>' + list.length + ' 单</td><td><b>' + totalQty + '</b></td>' +
       (B.amount ? '<td class="amt"><b>' + moneyFmt(totalAmt) + '</b></td>' : '') +
       (showPays ? '<td></td>' : '') + (showPayStatus ? '<td></td>' : '') + (showSettle ? '<td></td>' : '') + (showDeliveryMethod ? '<td></td>' : '') + (showDeliveryDate ? '<td></td>' : '') + (showDeliveryStatus ? '<td></td>' : '') +
-      (showFlags ? B.flags.map(() => '<td></td>').join('') : '') + (showInv ? '<td></td>' : '') + '<td></td></tr></tfoot>';
+      (showFlags ? B.flags.map(() => '<td></td>').join('') : '') + (showInv ? '<td></td>' : '') + (showRegistrant ? '<td></td>' : '') + '<td></td></tr></tfoot>';
 
     const extraHint = B.otype ? '表格按「订购类型」分小标签（' + B.otype.join(' / ') + '），点击可单独查看某一类，分析区也按当前显示范围统计。' : '';
     const syncHint = this.syncHintFor(bk);
@@ -499,7 +498,6 @@ const LedgerMod = {
     if(r.note) bits.push(r.note);
     if(bits.length) extra = '<div class="muted lg-extra">' + bits.map(x => esc(x)).join('；') + '</div>';
     return '<tr><td>' + r.date + (r._srcIcon ? (' <span class="tag" title="' + esc('\u6765\u81ea' + r._srcTitle) + '">' + r._srcIcon + '</span>') : '') + '</td>' +
-      (o.showRegistrant ? '<td>' + esc(r.registrant || '') + '</td>' : '') +
       (o.showDebtor ? '<td>' + esc(this.debtorName(r)) + '</td>' : '') +
       (o.showOtype ? '<td>' + esc(this.normOtype(r.otype) || '—') + '</td>' : '') +
       (o.showContact ? '<td>' + esc(r.contact || '') + '</td>' : '') +
@@ -521,6 +519,7 @@ const LedgerMod = {
       (o.showDeliveryStatus ? '<td>' + (r.deliveryStatus ? esc(r.deliveryStatus) : '<span class="muted">—</span>') + '</td>' : '') +
       (o.showFlags ? B.flags.map(f => '<td>' + ((r.flags && r.flags[f.key]) ? '是' : '<span class="muted">否</span>') + '</td>').join('') : '') +
       (o.showInv ? '<td>' + (r.inv && r.inv.length ? r.inv.map(esc).join('、') : '<span class="muted">—</span>') + '</td>' : '') +
+      (o.showRegistrant ? '<td>' + esc(r.registrant || '') + '</td>' : '') +
       (B.readOnly ? '' : (B.virtual
         ? '<td class="ops"><a onclick="LedgerMod.editFrom(\'' + esc(r._srcBook) + '\',\'' + r.id + '\')" title="回原订单修改收款方式">✎</a></td>'
         : '<td class="ops"><a onclick="LedgerMod.edit(\'' + r.id + '\')" title="编辑">✎</a>' +
@@ -600,7 +599,7 @@ const LedgerMod = {
       B.otype.map(t => '<option value="' + esc(t) + '"' + ((rec && rec.otype === t) ? ' selected' : '') + '>' + esc(t) + '</option>').join('') + '</select></div>' : '';
     const contactHtml = B.contact ? '<div class="lg-fld"><label>联系人</label><input autocomplete="off" id="lg-contact" value="' + ((rec && rec.contact) ? esc(rec.contact) : '') + '" placeholder="选填"></div>' : '';
     const salesmanHtml = B.salesman ? '<div class="lg-fld"><label>推销员姓名</label><input autocomplete="off" id="lg-salesman" value="' + ((rec && rec.salesman) ? esc(rec.salesman) : '') + '" placeholder="选填（谁经手这笔订单）"></div>' : '';
-    const registrantHtml = B.registrant ? '<div class="lg-fld"><label>登记人</label><select id="lg-registrant">' +
+    const registrantHtml = B.registrant ? '<div class="lg-fld"><label>登记人</label><select id="lg-registrant"><option value="">（未填）</option>' +
       B.registrant.map(p => '<option value="' + esc(p) + '"' + ((rec && rec.registrant === p) ? ' selected' : '') + '>' + esc(p) + '</option>').join('') + '</select></div>' : '';
     const unitHtml = B.unitField ? '<div class="lg-fld" id="lg-unit-row"' + ((rec && rec.otype && B.otypeUnit && !B.otypeUnit[rec.otype]) ? ' style="display:none"' : '') + '><label>单位 / 渠道</label><input autocomplete="off" id="lg-unit" value="' + ((rec && rec.unit) ? esc(rec.unit) : '') + '" placeholder="企业单位或批发渠道名称"></div>' : '';
     const invTitleShow = B.invTitle && rec && Array.isArray(rec.inv) && rec.inv.some(v => v.indexOf('暂不开发') === -1);
@@ -1065,7 +1064,6 @@ const LedgerMod = {
     const showOtype = !!B.otype, showContact = !!B.contact, showUnit = !!B.unitField, showDeliveryMethod = !!B.deliveryMethod, showDeliveryDate = !!B.deliveryDate, showDeliveryStatus = !!B.deliveryStatus, showSpecial = !!B.special, showInvTitle = !!B.invTitle, showPhone = !!B.phone, showDebtor = !!B.virtual;
     const showPayStatus = !!B.payStatus, showSalesman = !!B.salesman, showDeposit = !!B.deposit, showSettle = !!B.settle, showDept = !!B.dept, showRegistrant = !!B.registrant;
     const head = [(B.dateLabel || '日期')]
-      .concat(showRegistrant ? ['登记人'] : [])
       .concat(showDebtor ? ['赊账方'] : [])
       .concat(showOtype ? ['订购类型'] : [])
       .concat(showContact ? ['联系人'] : [])
@@ -1086,11 +1084,11 @@ const LedgerMod = {
       .concat(showInvTitle ? ['发票抬头'] : [])
       .concat(showSpecial ? ['特殊需求'] : [])
       .concat(showInv ? ['发票'] : [])
+      .concat(showRegistrant ? ['登记人'] : [])
       .concat(['备注']);
     const lines = [head.join(',')].concat(orders.flatMap(r =>
       (r.items || []).map(it =>
         [r.date]
-        .concat(showRegistrant ? [r.registrant || ''] : [])
         .concat(showDebtor ? [this.debtorName(r) || ''] : [])
         .concat(showOtype ? [r.otype || ''] : [])
         .concat(showContact ? [r.contact || ''] : [])
@@ -1111,6 +1109,7 @@ const LedgerMod = {
         .concat(showInvTitle ? [r.invTitle || ''] : [])
         .concat(showSpecial ? [r.special || ''] : [])
         .concat(showInv ? [(r.inv || []).join('/')] : [])
+        .concat(showRegistrant ? [r.registrant || ''] : [])
         .concat([(r.note || '').replace(/,/g, '，')]).join(','))));
     const blob = new Blob(['\ufeff' + lines.join('\n')], {type: 'text/csv;charset=utf-8'});
     const a = document.createElement('a');
@@ -1123,7 +1122,6 @@ const LedgerMod = {
   downloadLedgerTemplate(book){
     const B = this.BOOKS[book];
     const cols = ['日期'];
-    if(B.registrant) cols.push('登记人');
     if(B.otype) cols.push('订购类型');
     if(B.contact) cols.push('联系人');
     if(B.salesman) cols.push('推销员');
@@ -1143,9 +1141,9 @@ const LedgerMod = {
     if(B.invTitle) cols.push('发票抬头');
     if(B.special) cols.push('特殊需求');
     if(B.inv) cols.push('发票');
+    if(B.registrant) cols.push('登记人');
     cols.push('备注');
     const ex = ['2026-08-01'];
-    if(B.registrant) ex.push(B.registrant[0]);
     if(B.otype) ex.push(B.otype[0]);
     if(B.contact) ex.push('示例联系人');
     if(B.salesman) ex.push('示例推销员');
@@ -1165,6 +1163,7 @@ const LedgerMod = {
     if(B.invTitle) ex.push('');
     if(B.special) ex.push('');
     if(B.inv) ex.push((B.invOpts || INV_OPTS)[0]);
+    if(B.registrant) ex.push('');
     ex.push('');
     const aoa = [cols, ex];
     if(typeof XLSX !== 'undefined'){
@@ -1308,10 +1307,10 @@ const LedgerMod = {
     });
     if(!out.length){ toast('没有可导入的有效行（需 日期+产品+数量，如 2026-08-01）', false); return; }
     this._ledgerImport = {book, rows: out};
-    const colHead = '<th>日期</th>' + (B.otype ? '<th>订购类型</th>' : '') + (B.registrant ? '<th>登记人</th>' : '') + (B.head ? '<th>' + esc(B.head.label) + '</th>' : '') + (B.phone ? '<th>手机号</th>' : '') + '<th>产品</th><th>数量</th><th>金额</th>';
+    const colHead = '<th>日期</th>' + (B.otype ? '<th>订购类型</th>' : '') + (B.head ? '<th>' + esc(B.head.label) + '</th>' : '') + (B.phone ? '<th>手机号</th>' : '') + '<th>产品</th><th>数量</th><th>金额</th>' + (B.registrant ? '<th>登记人</th>' : '');
     const sample = out.slice(0, 8).map(r =>
-      '<tr><td>' + r.date + '</td>' + (B.otype ? '<td>' + esc(r.otype || '—') + '</td>' : '') + (B.registrant ? '<td>' + esc(r.registrant || '') + '</td>' : '') + (B.head ? '<td>' + esc(r[B.head.key] || '') + '</td>' : '') + (B.phone ? '<td>' + esc(r.phone || '') + '</td>' : '') +
-      '<td>' + esc(r.items[0].product) + '</td><td>' + r.items[0].qty + '</td><td class="amt">' + moneyFmt(r.total) + '</td></tr>').join('');
+      '<tr><td>' + r.date + '</td>' + (B.otype ? '<td>' + esc(r.otype || '—') + '</td>' : '') + (B.head ? '<td>' + esc(r[B.head.key] || '') + '</td>' : '') + (B.phone ? '<td>' + esc(r.phone || '') + '</td>' : '') +
+      '<td>' + esc(r.items[0].product) + '</td><td>' + r.items[0].qty + '</td><td class="amt">' + moneyFmt(r.total) + '</td>' + (B.registrant ? '<td>' + esc(r.registrant || '') + '</td>' : '') + '</tr>').join('');
     openModal('<h3>📥 确认导入「' + esc(B.title) + '」</h3>' +
       '<div class="hint">识别到 <b>' + out.length + '</b> 行有效订单（每行=含一种产品的订单；已忽略缺日期/产品/数量的行）。导入后随云端全店共享。</div>' +
       '<div class="add-row"><label class="chk-row"><input autocomplete="off" type="checkbox" id="lg-ov" checked> 追加到现有记录（取消则先清空该账本全部记录再导入）</label></div>' +
