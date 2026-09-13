@@ -307,6 +307,10 @@ textarea{width:100%;resize:vertical}
 .card-ops a:hover{opacity:1}
 
 /* ===== 每日经营数据模块 ===== */
+.biz-date-nav{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:4px 0 10px;padding:8px 10px;background:var(--bg);border:1px solid var(--line);border-radius:10px}
+.biz-date-nav .bdn-label{font-size:13px;color:var(--muted)}
+.biz-date-nav input[type=date]{width:auto;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-size:13px}
+.biz-date-nav .bdn-cur{margin-left:auto;font-size:13px;font-weight:600;color:var(--accent)}
 .biz-form{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;align-items:end}
 .biz-form label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:4px}
 .biz-form input{width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:14px}

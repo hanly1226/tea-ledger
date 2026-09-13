@@ -8,6 +8,7 @@ const BIZ_CH = BIZ_EARLY.concat(BIZ_LATE);
 const BIZ_CH_LABEL = {Cash: '现金', Wx: '微信/支付宝', Meituan: '美团', Taobao: '淘宝', Mini: '小程序', Guahao: '挂号', Canteen: '食堂卡'};
 const WorkMod = {
   selDate: todayStr(),
+  bizDate: todayStr(),
   bizMonth: todayStr().slice(0, 7),
   bizYear: String(new Date().getFullYear()),
   weekOffset: 0,
@@ -118,7 +119,7 @@ const WorkMod = {
       this.shiftCard('晚班', 'late', W.lateDaily, sp.late, 'spLate', log) +
       '</div>' +
       (sp.monthly.length ? this.monthlyCard(sp, log) : '') +
-      this.bizCard(d);
+      '<div id="biz-card-wrap">' + this.bizCard(this.bizDate) + '</div>';
   },
   // 显眼的「记录台账」快捷入口，置于提醒项目上方
   ledgerJump(){
@@ -263,6 +264,12 @@ const WorkMod = {
   setBizMonth(v){ if(v){ this.bizMonth = v; this.render(); } },
   setBizYear(v){ if(v){ this.bizYear = String(v); this.render(); } },
   shift(n){ this.selDate = fmtDate(addDays(parseDate(this.selDate), n)); this.render(); },
+  // 每日经营数据：独立日期（与上方打卡清单脱钩），仅局部刷新经营卡片
+  setBizDate(v){ if(v){ this.bizDate = v; this.renderBizOnly(); } },
+  prevBiz(){ this.bizDate = fmtDate(addDays(parseDate(this.bizDate), -1)); this.renderBizOnly(); },
+  nextBiz(){ this.bizDate = fmtDate(addDays(parseDate(this.bizDate), 1)); this.renderBizOnly(); },
+  todayBiz(){ this.bizDate = todayStr(); this.renderBizOnly(); },
+  renderBizOnly(){ const el = document.getElementById('biz-card-wrap'); if(el) el.innerHTML = this.bizCard(this.bizDate); },
   shiftCard(title, key, items, spItems, spKey, log){
     const total = items.length + spItems.length;
     let doneN = 0;
@@ -379,7 +386,15 @@ const WorkMod = {
       '<a onclick="WorkMod.downloadBizTemplate()" title="下载 Excel 导入模板">📄 模板</a>' +
       '<a onclick="WorkMod.importBizFile()" title="从 Excel/CSV 批量导入历史数据">📥 导入</a>' +
       '</span></h3>' +
-      '<div class="hint">记录每天的人流量与各大渠道单量，月底可一键分析与导出（数据随云端全店共享，换设备也不丢）。也可用「📥 导入」批量上传 Excel/CSV 历史数据。</div>' +
+      '<div class="biz-date-nav">' +
+        '<span class="bdn-label">📅 选择日期填报 / 修改：</span>' +
+        '<button class="btn sm" onclick="WorkMod.prevBiz()">◀ 前一天</button>' +
+        '<input autocomplete="off" type="date" value="' + d + '" onchange="WorkMod.setBizDate(this.value)">' +
+        '<button class="btn sm" onclick="WorkMod.nextBiz()">后一天 ▶</button>' +
+        '<button class="btn sm ghost" onclick="WorkMod.todayBiz()">回到今天</button>' +
+        '<span class="bdn-cur">正在编辑：' + d + ' ' + weekdayCn(d) + '</span>' +
+      '</div>' +
+      '<div class="hint">记录每天的人流量与各大渠道单量，月底可一键分析与导出（数据随云端全店共享，换设备也不丢）。也可用「📥 导入」批量上传 Excel/CSV 历史数据。改日期后此卡片会自动刷新为所选那天的历史数据，直接改完点「保存」即可覆盖。</div>' +
       '<div class="add-row biz-form">' +
         '<div class="biz-sub"><div class="biz-sub-h">👥 人流量</div>' +
           '<label>进店人数<input autocomplete="off" id="biz-flowIn" type="number" min="0" value="' + (+rec.flowIn || 0) + '" oninput="WorkMod.calcBizFlow()"></label>' +
@@ -542,7 +557,7 @@ const WorkMod = {
   },
   saveBiz(){
     const w = Store.get('work'); if(!w.biz) w.biz = {};
-    const d = this.selDate;
+    const d = this.bizDate;
     const rec = {
       flowIn: +($('#biz-flowIn').value || 0),
       flowOut: +($('#biz-flowOut').value || 0),
@@ -552,7 +567,7 @@ const WorkMod = {
     };
     BIZ_CH.forEach(k => { rec[k] = +($('#biz-' + k).value || 0); });
     w.biz[d] = rec;
-    Store.markDirty('work'); this.render(); toast('已保存 ' + d + ' 经营数据');
+    Store.markDirty('work'); this.renderBizOnly(); toast('已保存 ' + d + ' 经营数据');
   },
   exportBizCsv(month){
     const w = Store.get('work'); const biz = w.biz || {};
