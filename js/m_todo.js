@@ -83,7 +83,8 @@ const TodoMod = {
       '<div id="ed-remind-date-wrap" style="margin:6px 0;display:' + (mode === 'date' ? 'block' : 'none') + '">提醒日期 <input autocomplete="off" type="date" id="ed-remind-date" value="' + dateVal + '"></div>' +
       '<div id="ed-remind-week-wrap" style="margin:6px 0;display:' + (mode === 'week' ? 'block' : 'none') + '">固定星期（可多选）' +
       '<div class="chips">' + weekChecks + '</div></div>' +
-      '<div class="hint">「提前一天就开始提醒」：目标日/目标星期的前一天即触发提醒。</div>' +
+      (i.done ? '<label class="f-label">完成时间</label><input autocomplete="off" type="date" id="ed-doneDate" value="' + (i.doneDate || todayStr()) + '">' : '') +
+      '<div class="hint">「提前一天就开始提醒」：目标日/目标星期的前一天即触发提醒。' + (i.done ? ' 已完成事项的「完成时间」可在此修改，将按该日期归入对应周/月汇总。' : '') + '</div>' +
       '<div class="modal-btns"><button class="btn ghost" onclick="closeModal()">取消</button>' +
       '<button class="btn" onclick="TodoMod.saveEdit(\'' + id + '\')">保存</button></div>');
   },
@@ -109,6 +110,10 @@ const TodoMod = {
       remind = days.length ? {mode: 'week', days} : {mode: 'none'};
     }
     i.remind = remind;
+    if(i.done){
+      const dd = $('#ed-doneDate');
+      if(dd && dd.value) i.doneDate = dd.value; // 修改完成时间，按新日期归入汇总
+    }
     Store.markDirty('todo'); closeModal(); this.render(); toast('已保存');
   },
   remove(id){
