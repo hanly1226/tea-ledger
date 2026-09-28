@@ -118,6 +118,7 @@ const ProdMod = {
       (p.effect ? '<div class="muted"><b>功效：</b>' + esc(p.effect) + '</div>' : '') +
       '<div class="suit-tags">' + (p.suit || []).map(s => '<em class="tag">' + s + '</em>').join('') + '</div>' +
       (p.people ? '<div class="muted sm-txt"><b>适宜人群：</b>' + esc(p.people) + '</div>' : '') +
+      (p.spec ? '<div class="muted sm-txt">📦 规格：' + esc(p.spec) + '</div>' : '') +
       (p.compat ? '<details class="prod-desc"><summary>和合配伍（君/臣/佐/使）</summary><div>' + esc(p.compat) + '</div></details>' : '') +
       (p.herb ? '<details class="prod-desc"><summary>本草实录</summary><div>' + esc(p.herb) + '</div></details>' : '') +
       (p.desc ? '<div class="muted sm-txt"><b>卖点：</b>' + esc(p.desc) + '</div>' : '') +
