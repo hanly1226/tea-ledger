@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#2f5d43">
+<title>中医养生茶饮 · 云端协同工作台</title>
+<link rel="icon" href="icon.svg">
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="养生工作台">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="icon.svg">
+  <link rel="stylesheet" href="css/style.css?v=20260909">
+  <script defer src="js/lib/xlsx.full.min.js" onerror="(function(){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';document.head.appendChild(s);})()"></script>
+<script async src="https://beacon.cdn.qq.com/sdk/4.5.9/beacon_web.min.js" onerror="window.__beaconBlocked=true"></script>
+<script>
+(function(){
+  try{
+    var beacon=new BeaconAction({
+      appkey:'0WEB06U85YBSLJNL',
+      versionCode:'1.0.0',
+      channelID:'share',
+      delay:1000,
+      sessionDuration:30*60*1000,
+      isOversea:false,
+      needReportRqdEvent:false
+    });
+    beacon.onDirectUserAction('preview_page_view',{
+      'url':location.href,
+      'referrer':document.referrer,
+      'title':document.title,
+      'sandbox_id':'fbd80bd665a74df9bdc3b5ec29903ae3'
+    });
+  }catch(e){}
+})();
+<style>
+  #login-gate{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#2f5d43,#3c7a57);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;}
+  .login-card{background:#fff;border-radius:18px;padding:34px 28px;width:300px;max-width:86vw;
+    box-shadow:0 20px 60px rgba(0,0,0,.32);text-align:center;}
+  .login-logo{font-size:46px;line-height:1;}
+  .login-card h1{font-size:20px;margin:10px 0 4px;color:#2f5d43;}
+  .login-sub{color:#8a8a8a;font-size:13px;margin-bottom:20px;}
+  #login-pwd{width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid #ddd;border-radius:10px;
+    font-size:15px;margin-bottom:12px;outline:none;}
+  #login-pwd:focus{border-color:#2f5d43;}
+  #login-btn{width:100%;padding:12px;border:none;border-radius:10px;background:#2f5d43;color:#fff;
+    font-size:15px;cursor:pointer;transition:opacity .15s;}
+  #login-btn:active{opacity:.85;}
+  .login-err{color:#d33;font-size:13px;min-height:18px;margin-top:10px;}
+  #cloud-refresh{margin-left:8px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;
+    border-radius:8px;padding:3px 9px;font-size:12px;cursor:pointer;line-height:1.4;}
+  #cloud-refresh:hover{background:rgba(255,255,255,.22);}
+  #cloud-refresh:active{transform:scale(.94);}
+  @keyframes cwspin{to{transform:rotate(360deg);}}
+  #cloud-refresh.spin{animation:cwspin .7s linear;}
+</style>
+</script></head>
+<body>
+  <!-- 自动填充诱饵：屏幕外的假登录框，吸收浏览器凭据/账号自动填充，避免其填入真实搜索框 -->
+  <div aria-hidden="true" style="position:absolute;left:-99999px;top:-99999px;width:1px;height:1px;overflow:hidden">
+    <input type="text" id="__af_user" name="__af_user" tabindex="-1">
+    <input type="password" id="__af_pass" name="__af_pass" tabindex="-1">
+  </div>
+  <div id="topbar">
+    <span class="logo">🍵</span>
+    <span id="shop-name">中医养生茶饮工作台</span>
+    <span id="top-date"></span>
+    <div id="sync-box"><span class="dot" id="sync-dot"></span><span id="sync-text">连接云端中…</span><button id="cloud-refresh" onclick="AppCloudRefresh()" title="立即从云端刷新最新数据">🔄 刷新</button></div>
+  </div>
+  <div id="layout" style="display:none">
+    <div id="nav"></div>
+    <div id="content"></div>
+  </div>
+  <div id="login-gate">
+    <div class="login-card">
+      <div class="login-logo">🍵</div>
+      <h1>中医养生茶饮工作台</h1>
+      <p class="login-sub">请输入访问密码</p>
+      <input id="login-pwd" type="password" placeholder="密码" autocomplete="off">
+      <button id="login-btn">进入</button>
+      <div id="login-err" class="login-err"></div>
+    </div>
+  </div>
+  <script>
+  (function(){
+    var CORRECT='123456';
+    var gate=document.getElementById('login-gate');
+    var pwd=document.getElementById('login-pwd');
+    var btn=document.getElementById('login-btn');
+    var err=document.getElementById('login-err');
+    var layout=document.getElementById('layout');
+    function tryLogin(){
+      if(pwd.value===CORRECT){
+        try{localStorage.setItem('tcmws_logged','1');}catch(e){}
+        gate.style.display='none';
+        layout.style.display='';
+      }else{
+        err.textContent='密码错误，请重试';
+        pwd.value=''; pwd.focus();
+      }
+    }
+    btn.addEventListener('click',tryLogin);
+    pwd.addEventListener('keydown',function(e){ if(e.key==='Enter') tryLogin(); });
+    if(localStorage.getItem('tcmws_logged')==='1'){
+      gate.style.display='none';
+      layout.style.display='';
+    }else{
+      layout.style.display='none';
+      try{ pwd.focus(); }catch(e){}
+    }
+  })();
+  </script>
+  <script src="js/config.js?v=20260909"></script>
+  <script src="js/data.js?v=20260909"></script>
+  <script src="js/data_terms.js?v=20260909"></script>
+  <script src="js/data_work.js?v=20260909"></script>
+  <script src="js/data_products.js?v=20260909"></script>
+  <script src="js/data_match.js?v=20260909"></script>
+  <script src="js/data_hotspots.js?v=20260909"></script>
+  <script src="js/core.js?v=20260909"></script>
+  <script src="js/m_todo.js?v=20260909"></script>
+  <script src="js/m_work.js?v=20260909"></script>
+  <script src="js/m_wellness.js?v=20260909"></script>
+  <script src="js/m_match.js?v=20260909"></script>
+  <script src="js/m_products.js?v=20260909"></script>
+  <script src="js/m_ledger.js?v=20260909"></script>
+  <script src="js/m_schedule.js?v=20260909"></script>
+  <script src="js/m_memo.js?v=20260909"></script>
+  <script src="js/m_finance.js?v=20260909"></script>
+  <script src="js/m_ai.js?v=20260909"></script>
+  <script src="js/main.js?v=20260909"></script>
+</body>
+</html>

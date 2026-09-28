@@ -1,0 +1,61 @@
+:root{
+  --bg:#f4f1ea; --card:#ffffff; --ink:#2f2a24; --muted:#8a8076;
+  --line:#e7e1d6; --brand:#5a7d52; --brand2:#3f5a39; --gold:#b8893b;
+  --shadow:0 4px 18px rgba(60,50,40,.10);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg); color:var(--ink); line-height:1.6; -webkit-font-smoothing:antialiased;
+}
+.pp-head{
+  position:sticky; top:0; z-index:10; background:linear-gradient(135deg,var(--brand),var(--brand2));
+  color:#fff; padding:18px 16px 12px; box-shadow:var(--shadow);
+}
+.pp-shop{font-size:22px; font-weight:800; letter-spacing:1px}
+.pp-sub{font-size:13px; opacity:.9; margin-top:2px}
+.pp-bar{display:flex; align-items:center; gap:10px; margin-top:12px; flex-wrap:wrap}
+.pp-cats{display:flex; gap:8px; overflow-x:auto; flex:1; padding-bottom:4px}
+.pp-cat{
+  flex:0 0 auto; background:rgba(255,255,255,.18); color:#fff; border:1px solid rgba(255,255,255,.35);
+  padding:5px 12px; border-radius:999px; font-size:13px; cursor:pointer; white-space:nowrap; user-select:none;
+}
+.pp-cat.on{background:#fff; color:var(--brand2); font-weight:700}
+.pp-status{font-size:11px; opacity:.85; white-space:nowrap}
+.pp-refresh{
+  flex:0 0 auto; background:rgba(255,255,255,.18); color:#fff; border:1px solid rgba(255,255,255,.4);
+  border-radius:8px; padding:5px 10px; font-size:13px; cursor:pointer;
+}
+.pp-refresh:active{transform:scale(.96)}
+.pp-list{
+  max-width:1080px; margin:0 auto; padding:16px; display:grid; gap:16px;
+  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+}
+.pp-empty{grid-column:1/-1; text-align:center; color:var(--muted); padding:40px 0}
+.pp-card{
+  background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden;
+  box-shadow:var(--shadow); display:flex; flex-direction:column;
+}
+.pp-imgs{display:flex; flex-direction:column; gap:0; background:#efece4}
+.pp-imgs img{width:100%; height:200px; object-fit:cover; display:block; border-bottom:1px solid var(--line)}
+.pp-name{font-size:17px; font-weight:800; padding:12px 14px 4px}
+.pp-meta{padding:0 14px 6px; font-size:14px; display:flex; flex-wrap:wrap; gap:8px; align-items:baseline}
+.pp-spec{color:var(--muted); font-size:13px}
+.pp-price{color:var(--muted)}
+.pp-member{
+  color:#fff; background:linear-gradient(135deg,var(--gold),#9a6f2c); border-radius:6px;
+  padding:2px 8px; font-weight:700; font-size:13px;
+}
+.pp-formula{padding:4px 14px; font-size:13px; color:#5a5249}
+.pp-suit{display:flex; flex-wrap:wrap; gap:6px; padding:6px 14px}
+.pp-tag{
+  background:#eef3ea; color:var(--brand2); border:1px solid #d6e3cf; border-radius:999px;
+  padding:2px 9px; font-size:12px;
+}
+.pp-people{padding:2px 14px 12px; font-size:13px; color:#5a5249}
+.pp-foot{text-align:center; color:var(--muted); font-size:12px; padding:18px 16px 28px}
+@media (max-width:480px){
+  .pp-list{grid-template-columns:1fr; padding:12px}
+  .pp-shop{font-size:19px}
+}
