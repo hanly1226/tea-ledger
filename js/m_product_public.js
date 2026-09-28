@@ -5,7 +5,8 @@ const PP = {
   key: 'tcmgy_ws_v1_products_public',
   url: 'https://textdb.online/tcmgy_ws_v1_products_public',
   cats: ['奶茶咖啡', '药食同源食品', '袋泡茶饮', '膏方', '药枕香囊', '合香产品'],
-  curCat: '全部',
+  curCat: '合香产品',
+  q: '',
   data: [],
   async load(){
     try {
@@ -40,24 +41,56 @@ const PP = {
       catsEl.innerHTML = all.map(c => '<span class="pp-cat' + (c === this.curCat ? ' on' : '') + '" data-c="' + esc(c) + '" onclick="PP.filter(\'' + c + '\')">' + esc(c) + '</span>').join('');
       catsEl.dataset.built = '1';
     }
-    const list = this.curCat === '全部' ? this.data : this.data.filter(p => p.cat === this.curCat);
+    const list = this.q ? this.data.filter(p => this.matchQ(p)) :
+      (this.curCat === '全部' ? this.data : this.data.filter(p => p.cat === this.curCat));
     const el = document.getElementById('pp-list');
     if(!el) return;
-    if(!list.length){ el.innerHTML = '<div class="pp-empty">该分类暂无产品，到店咨询更多～</div>'; return; }
+    if(!list.length){ el.innerHTML = '<div class="pp-empty">' + (this.q ? '没有匹配「' + esc(this.q) + '」的产品' : '该分类暂无产品，到店咨询更多～') + '</div>'; return; }
     el.innerHTML = list.map(p => this.card(p)).join('');
   },
   filter(c){
     this.curCat = c;
+    this.q = ''; // 切换分类时清空搜索，避免搜索态与分类态冲突
+    const si = document.getElementById('pp-search'); if(si) si.value = '';
+    const cl = document.getElementById('pp-search-clear'); if(cl) cl.classList.remove('show');
     const catsEl = document.getElementById('pp-cats');
     if(catsEl) catsEl.querySelectorAll('.pp-cat').forEach(s => s.classList.toggle('on', s.dataset.c === c));
     this.render();
+  },
+  // 搜索：名称 / 大类 / 香方(组成) / 规格 / 适宜人群 / 适宜体质
+  matchQ(p){
+    const s = (this.q || '').trim().toLowerCase();
+    if(!s) return true;
+    const hay = [p.name, p.cat, p.formula, p.spec, p.unit, p.people, (p.suit || []).join(' ')]
+      .filter(Boolean).join(' ').toLowerCase();
+    return hay.indexOf(s) >= 0;
+  },
+  onSearch(v){
+    this.q = (v || '').trim();
+    const cl = document.getElementById('pp-search-clear'); if(cl) cl.classList.toggle('show', !!this.q);
+    this.render();
+  },
+  clearSearch(){
+    this.q = '';
+    const si = document.getElementById('pp-search'); if(si) si.value = '';
+    const cl = document.getElementById('pp-search-clear'); if(cl) cl.classList.remove('show');
+    this.render();
+  },
+  zoom(src){
+    const lb = document.getElementById('pp-lightbox');
+    const img = document.getElementById('pp-lightbox-img');
+    if(lb && img){ img.src = src; lb.classList.add('show'); }
+  },
+  closeZoom(){
+    const lb = document.getElementById('pp-lightbox');
+    if(lb) lb.classList.remove('show');
   },
   card(p){
     const label = (p.cat === '合香产品') ? '香方' : '组成';
     const price = (p.price == null) ? '' : ('<span class="pp-price">原价 ¥' + p.price + (p.unit && p.unit !== '元' ? p.unit : '') + '</span>');
     const member = (p.member == null) ? '' : ('<span class="pp-member">会员 ¥' + p.member + '</span>');
     const imgs = (p.imgs && p.imgs.length) ? p.imgs : [];
-    const gallery = imgs.length ? '<div class="pp-imgs">' + imgs.map(src => '<img src="' + src + '" alt="' + esc(p.name) + '" loading="lazy">').join('') + '</div>' : '';
+    const gallery = imgs.length ? '<div class="pp-imgs">' + imgs.map(src => '<img src="' + src + '" alt="' + esc(p.name) + '" loading="lazy" onclick="PP.zoom(this.src)">').join('') + '</div>' : '';
     const suit = (p.suit || []).map(s => '<em class="pp-tag">' + esc(s) + '</em>').join('');
     const people = p.people ? '<div class="pp-people">👥 ' + esc(p.people) + '</div>' : '';
     const formula = p.formula ? '<div class="pp-formula">🧪 ' + esc(label) + '：' + esc(p.formula) + '</div>' : '';
@@ -71,6 +104,7 @@ const PP = {
     this.load();
     const rb = document.getElementById('pp-refresh');
     if(rb) rb.addEventListener('click', () => this.load());
+    document.addEventListener('keydown', e => { if(e.key === 'Escape') this.closeZoom(); });
     setInterval(() => this.load(), 5000); // 每5秒轮询，资料库更新即自动同步
   }
 };

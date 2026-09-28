@@ -11,6 +11,11 @@
 <header class="pp-head">
   <div class="pp-shop">中医养生茶饮</div>
   <div class="pp-sub">产品目录 · 养生好物一览</div>
+  <div class="pp-search">
+    <span class="pp-search-ico">🔍</span>
+    <input id="pp-search" type="search" placeholder="搜索产品名称 / 香方 / 组成 / 规格…" autocomplete="off" oninput="PP.onSearch(this.value)">
+    <button class="pp-search-clear" id="pp-search-clear" type="button" onclick="PP.clearSearch()" aria-label="清除">✕</button>
+  </div>
   <div class="pp-bar">
     <div class="pp-cats" id="pp-cats"></div>
     <div class="pp-status" id="pp-status">加载中…</div>
@@ -19,6 +24,7 @@
 </header>
 <main id="pp-list" class="pp-list"></main>
 <footer class="pp-foot">本页为对外展示，资料随店内更新自动同步 · 到店选购更优惠</footer>
+<div class="pp-lightbox" id="pp-lightbox" onclick="PP.closeZoom()"><img id="pp-lightbox-img" src="" alt=""></div>
 <script src="js/m_product_public.js"></script>
 </body>
 </html>

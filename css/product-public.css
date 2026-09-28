@@ -15,6 +15,14 @@ body{
 }
 .pp-shop{font-size:22px; font-weight:800; letter-spacing:1px}
 .pp-sub{font-size:13px; opacity:.9; margin-top:2px}
+.pp-search{display:flex; align-items:center; gap:8px; margin-top:12px; background:rgba(255,255,255,.22);
+  border:1px solid rgba(255,255,255,.4); border-radius:10px; padding:6px 10px}
+.pp-search-ico{font-size:14px; opacity:.9}
+.pp-search input{flex:1; min-width:0; border:0; background:transparent; color:#fff; font-size:14px; outline:none}
+.pp-search input::placeholder{color:rgba(255,255,255,.7)}
+.pp-search-clear{display:none; border:0; background:rgba(255,255,255,.25); color:#fff; border-radius:50%;
+  width:22px; height:22px; line-height:1; font-size:13px; cursor:pointer; flex:0 0 auto}
+.pp-search-clear.show{display:block}
 .pp-bar{display:flex; align-items:center; gap:10px; margin-top:12px; flex-wrap:wrap}
 .pp-cats{display:flex; gap:8px; overflow-x:auto; flex:1; padding-bottom:4px}
 .pp-cat{
@@ -38,7 +46,7 @@ body{
   box-shadow:var(--shadow); display:flex; flex-direction:column;
 }
 .pp-imgs{display:flex; flex-direction:column; gap:0; background:#efece4}
-.pp-imgs img{width:100%; height:200px; object-fit:cover; display:block; border-bottom:1px solid var(--line)}
+.pp-imgs img{width:100%; aspect-ratio:4 / 3; object-fit:cover; display:block; border-bottom:1px solid var(--line); cursor:zoom-in}
 .pp-name{font-size:17px; font-weight:800; padding:12px 14px 4px}
 .pp-meta{padding:0 14px 6px; font-size:14px; display:flex; flex-wrap:wrap; gap:8px; align-items:baseline}
 .pp-spec{color:var(--muted); font-size:13px}
@@ -55,6 +63,11 @@ body{
 }
 .pp-people{padding:2px 14px 12px; font-size:13px; color:#5a5249}
 .pp-foot{text-align:center; color:var(--muted); font-size:12px; padding:18px 16px 28px}
+.pp-lightbox{position:fixed; inset:0; z-index:100; background:rgba(20,16,12,.88); display:none;
+  align-items:center; justify-content:center; padding:20px; cursor:zoom-out}
+.pp-lightbox.show{display:flex}
+.pp-lightbox img{max-width:100%; max-height:100%; object-fit:contain; border-radius:10px;
+  box-shadow:0 10px 50px rgba(0,0,0,.55)}
 @media (max-width:480px){
   .pp-list{grid-template-columns:1fr; padding:12px}
   .pp-shop{font-size:19px}
