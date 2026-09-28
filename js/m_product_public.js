@@ -61,7 +61,7 @@ const PP = {
     const suit = (p.suit || []).map(s => '<em class="pp-tag">' + esc(s) + '</em>').join('');
     const people = p.people ? '<div class="pp-people">👥 ' + esc(p.people) + '</div>' : '';
     const formula = p.formula ? '<div class="pp-formula">🧪 ' + esc(label) + '：' + esc(p.formula) + '</div>' : '';
-    const spec = p.unit ? '<div class="pp-spec">规格：' + esc(p.unit) + '</div>' : '';
+    const spec = (p.spec ? '<div class="pp-spec">规格：' + esc(p.spec) + '</div>' : (p.unit && p.unit !== '元' ? '<div class="pp-spec">规格：' + esc(p.unit) + '</div>' : ''));
     const meta = (spec || price || member) ? '<div class="pp-meta">' + spec + price + member + '</div>' : '';
     return '<section class="pp-card">' + gallery +
       '<div class="pp-name">' + esc(p.name) + '</div>' + meta + formula +

@@ -170,7 +170,7 @@ const ProdMod = {
     reader.readAsDataURL(file);
   },
   edit(id){
-    const p = id ? this.find(id) : {cat: this.curCat, name: '', price: '', member: '', staff: '', unit: '元', formula: '', effect: '', suit: [], avoid: '', people: '', compat: '', herb: '', desc: '', note: ''};
+    const p = id ? this.find(id) : {cat: this.curCat, name: '', price: '', member: '', staff: '', unit: '元', spec: '', formula: '', effect: '', suit: [], avoid: '', people: '', compat: '', herb: '', desc: '', note: ''};
     if(!p) return;
     this._imgBuf = (p.imgs || []).slice(); // 图片编辑会话缓冲
     openModal('<h3>' + (id ? '编辑产品' : '新增产品') + '</h3>' +
@@ -182,6 +182,7 @@ const ProdMod = {
       '<div><label class="f-label">会员价（元）</label><input autocomplete="off" id="pf-member" type="number" min="0" step="0.01" value="' + (p.member==null?'':p.member) + '"></div>' +
       '<div><label class="f-label">职工价（元）</label><input autocomplete="off" id="pf-staff" type="number" min="0" step="0.01" value="' + (p.staff==null?'':p.staff) + '"></div></div>' +
       '<label class="f-label">单位（如：元 / 元/盒（15包））</label><input autocomplete="off" id="pf-unit" value="' + esc(p.unit || '元') + '">' +
+      '<label class="f-label">规格（如：10包/盒、50g/罐、200ml/瓶）</label><input autocomplete="off" id="pf-spec" value="' + esc(p.spec || '') + '">' +
       '<label class="f-label" id="pf-formula-label">配料 / ' + (this.isIncense(p) ? '香方' : '组成') + '</label><textarea id="pf-formula" rows="2">' + esc(p.formula || '') + '</textarea>' +
       '<label class="f-label">功效（如：温养头皮、理气安神、滋养发根、舒缓紧绷）</label><textarea id="pf-effect" rows="2">' + esc(p.effect || '') + '</textarea>' +
       '<label class="f-label">适宜体质（点选，用于体质匹配与节气文案）</label>' +
@@ -238,6 +239,7 @@ const ProdMod = {
       const items = (Store.get('products').items || []).filter(p => !p.del);
       const pub = items.map(p => ({
         id: p.id, name: p.name, cat: p.cat, unit: p.unit || '元',
+        spec: p.spec || '',
         price: (p.price == null ? null : p.price),
         member: (p.member == null ? null : p.member),
         formula: p.formula || '',
