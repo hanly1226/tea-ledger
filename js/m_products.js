@@ -147,9 +147,27 @@ const ProdMod = {
     files.forEach(f => this.resizeImage(f, 1000, dataUrl => {
       if(dataUrl) this._imgBuf.push(dataUrl);
       this.refreshImgPreview();
+      this.persistImgs(); // B方案：已有产品上传即时落库
     }));
   },
-  removeImg(i){ if(this._imgBuf) this._imgBuf.splice(i, 1); this.refreshImgPreview(); },
+  removeImg(i){ if(this._imgBuf) this._imgBuf.splice(i, 1); this.refreshImgPreview(); this.persistImgs(); },
+  // B方案：已有产品上传/删除图片即时落库（新产品尚无 id，待点"保存"时一并写入），避免"传了没保存"丢图
+  persistImgs(){
+    const id = this._editId;
+    if(!id) return;
+    const p = this.find(id); if(!p) return;
+    p.imgs = (this._imgBuf || []).slice();
+    Store.markDirty('products');
+    this.pushPublicProducts();
+    toast('图片已保存');
+  },
+  // B方案：关闭弹窗前若新产品仍有未保存图片，二次确认，防误关丢失
+  tryClose(){
+    if(this._imgBuf && this._imgBuf.length && !this._editId){
+      if(!confirm('还有 ' + this._imgBuf.length + ' 张图片未保存，关闭后将丢失，确定关闭？')) return;
+    }
+    closeModal();
+  },
   // 客户端压缩：最大宽 maxW，输出 JPEG 0.82，控制 textdb 体积
   resizeImage(file, maxW, cb){
     const reader = new FileReader();
@@ -173,6 +191,7 @@ const ProdMod = {
   edit(id){
     const p = id ? this.find(id) : {cat: this.curCat, name: '', price: '', member: '', staff: '', unit: '元', spec: '', formula: '', effect: '', suit: [], avoid: '', people: '', compat: '', herb: '', desc: '', note: ''};
     if(!p) return;
+    this._editId = id || null; // 记录正在编辑的产品 id（B方案：已有产品上传图片即时落库）
     this._imgBuf = (p.imgs || []).slice(); // 图片编辑会话缓冲
     openModal('<h3>' + (id ? '编辑产品' : '新增产品') + '</h3>' +
       '<label class="f-label">产品名称 *</label><input autocomplete="off" id="pf-name" value="' + esc(p.name) + '">' +
@@ -197,8 +216,9 @@ const ProdMod = {
       '<label class="f-label">备注</label><input autocomplete="off" id="pf-note" value="' + esc(p.note || '') + '">' +
       '<label class="f-label">商品图片（可多张，自动压缩，对外展示页可见）</label>' +
       '<input type="file" id="pf-img-input" accept="image/*" multiple onchange="ProdMod.onPickImages(this)">' +
+      '<div class="muted sm-txt">📌 上传图片即时存入云端（编辑已有产品无需再点保存）；新增产品请记得点"保存"。</div>' +
       '<div id="pf-img-preview" class="img-preview">' + this.imgPreviewHtml() + '</div>' +
-      '<div class="modal-btns"><button class="btn ghost" onclick="closeModal()">取消</button>' +
+      '<div class="modal-btns"><button class="btn ghost" onclick="ProdMod.tryClose()">取消</button>' +
       '<button class="btn" onclick="ProdMod.save(\'' + (id || '') + '\')">保存</button></div>', 'wide');
   },
   save(id){
@@ -212,6 +232,7 @@ const ProdMod = {
       member: mb === '' ? null : (+mb || 0),
       staff: sf === '' ? null : (+sf || 0),
       unit: $('#pf-unit').value.trim() || '元',
+      spec: $('#pf-spec').value.trim(),
       formula: $('#pf-formula').value.trim(),
       effect: $('#pf-effect').value.trim(),
       suit,
