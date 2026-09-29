@@ -157,6 +157,7 @@ const ProdMod = {
     if(!id) return;
     const p = this.find(id); if(!p) return;
     p.imgs = (this._imgBuf || []).slice();
+    p.t = Date.now();
     Store.markDirty('products');
     this.pushPublicProducts();
     toast('图片已保存');
@@ -244,8 +245,8 @@ const ProdMod = {
       note: $('#pf-note').value.trim(),
       imgs: this._imgBuf ? this._imgBuf.slice() : []
     };
-    if(id){ Object.assign(this.find(id), obj); }
-    else { obj.id = uid(); obj.del = false; Store.get('products').items.push(obj); }
+    if(id){ const cur = this.find(id); Object.assign(cur, obj); cur.t = Date.now(); }
+    else { obj.id = uid(); obj.del = false; obj.t = Date.now(); Store.get('products').items.push(obj); }
     Store.markDirty('products'); closeModal();
     this.pushPublicProducts(); // 同步对外展示投影
     this.curCat = obj.cat; this.render(); toast('已保存');
@@ -259,7 +260,8 @@ const ProdMod = {
   async pushPublicProducts(){
     try {
       const items = (Store.get('products').items || []).filter(p => !p.del);
-      const pub = items.map(p => ({
+      const pubMap = new Map();
+      items.forEach(p => pubMap.set(p.id, {
         id: p.id, name: p.name, cat: p.cat, unit: p.unit || '元',
         spec: p.spec || '',
         price: (p.price == null ? null : p.price),
@@ -267,8 +269,26 @@ const ProdMod = {
         formula: p.formula || '',
         suit: p.suit || [],
         people: p.people || '',
-        imgs: p.imgs || []
+        imgs: (p.imgs || []).slice()
       }));
+      // 粘性保护：仅当本地某产品「当前无图」时才取回云端 products_public 中该产品的图片，
+      // 避免本地瞬时缺图（如刚被整值覆盖）把对外展示页已上传的图片冲掉。
+      const needSticky = Array.from(pubMap.values()).some(p => !(p.imgs || []).length);
+      if(needSticky){
+        try {
+          const rem = await Store.fetchRemote('products_public');
+          if(rem && Array.isArray(rem.data)){
+            rem.data.forEach(rp => {
+              if(!rp || rp.id == null) return;
+              const lp = pubMap.get(rp.id);
+              const lImgs = lp ? (lp.imgs || []).length : 0;
+              const rImgs = (rp.imgs || []).length;
+              if(lp && !lImgs && rImgs) lp.imgs = rp.imgs; // 本地无图、云端有图 → 用云端图
+            });
+          }
+        } catch(e){}
+      }
+      const pub = Array.from(pubMap.values());
       const key = TCM_CONFIG.cloudBase + 'products_public';
       const payload = JSON.stringify({rev: Date.now(), device: Store.device, t: Date.now(), data: pub});
       try { localStorage.setItem('tcmws_products_public', payload); } catch(e){}

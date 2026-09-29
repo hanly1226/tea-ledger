@@ -29,6 +29,8 @@ function moneyFmt(n){ return '¥' + (Math.round(n * 100) / 100).toLocaleString('
 // 需要「按记录合并」的分片（多人同时编辑时按 id 合并，避免整本覆盖互相吞掉对方新增/修改）。
 // 现仅 ledger（运营台账）命中此结构；其余分片维持原有整值比较。
 const MERGE_SHARDS = new Set(['ledger']);
+// 产品分片（{items:[...]}）：按 id 合并，避免手机/电脑同时编辑时整值覆盖互相吞掉对方的产品增改（尤其图片）。
+const MERGE_ITEM_SHARDS = new Set(['products']);
 
 // 按记录合并两个台账分片：local/remote 形如 { 账本: [ {id, t, ...} ] }
 // 规则：同一 id 保留 t 较新者；只有一方有的记录全部保留（并集）；删除记录（del:true）也按 t 较新者判定。
@@ -71,6 +73,46 @@ function mergeRecordBooks(local, remote){
     out[book] = kept;
   }
   return out;
+}
+
+// 按 id 合并两个「产品分片」{items:[...]}：
+// 规则：同一 id 优先保留「有图一方」（图片粘性，杜绝一方无图快照覆盖掉对方已上传图片）；
+//       双方均有图或均无图时，t 较新者胜出（云端与本地 t 相等时取云端，避免本地陈旧版本回写）；
+//       仅一方有的产品全部保留（并集）；数组合并顺序以本地为主、远端独有者追加在后。
+// 返回合并后的 {items:[...]}；若结构不符（非 {items:[...]}）则回退为 remote（或 local）。
+function mergeItemShard(local, remote){
+  const lArr = local && Array.isArray(local.items) ? local.items : null;
+  const rArr = remote && Array.isArray(remote.items) ? remote.items : null;
+  if(!lArr && !rArr) return local || remote || {items: []};
+  if(!lArr) return remote;
+  if(!rArr) return local;
+  const map = new Map();
+  lArr.forEach(p => { if(p && p.id != null) map.set(p.id, p); });
+  rArr.forEach(p => {
+    if(!p || p.id == null) return;
+    const ex = map.get(p.id);
+    if(!ex){ map.set(p.id, p); return; }
+    const lImgs = (ex.imgs || []).length, rImgs = (p.imgs || []).length;
+    if(lImgs && !rImgs) map.set(p.id, ex);        // 粘性：本地有图 > 远端无图
+    else if(rImgs && !lImgs) map.set(p.id, p);    // 粘性：远端有图 > 本地无图
+    else {
+      const lt = ex.t || 0, rt = p.t || 0;
+      map.set(p.id, rt >= lt ? p : ex);           // 较新者胜出，平局取云端
+    }
+  });
+  const out = [];
+  const seen = new Set();
+  lArr.forEach(p => { if(p && p.id != null && map.has(p.id)){ out.push(map.get(p.id)); seen.add(p.id); } });
+  rArr.forEach(p => { if(p && p.id != null && map.has(p.id) && !seen.has(p.id)){ out.push(map.get(p.id)); seen.add(p.id); } });
+  return {items: out};
+}
+
+// 统一按分片类型选择合并策略：产品(products)走「按 id 合并（图片粘性）」，台账(ledger)走「按记录合并」。
+// 非台账结构（mergeRecordBooks 返回 null）回落为 remote，避免误清空。
+function mergeShard(s, local, remote){
+  if(MERGE_ITEM_SHARDS.has(s)) return mergeItemShard(local, remote);
+  const m = mergeRecordBooks(local, remote);
+  return m !== null ? m : remote;
 }
 
 let toastTimer = null;
@@ -125,13 +167,13 @@ const Store = {
     SHARDS.forEach(s => {
       let cached = null;
       try { cached = JSON.parse(localStorage.getItem('tcmws_' + s) || 'null'); } catch(e){}
-      if(cached && cached.data !== undefined){ this.data[s] = cached.data; this.rev[s] = cached.rev || 1; }
+      if(cached && cached.data !== undefined){ this.data[s] = cached.data; this.rev[s] = cached.rev || 1; this.shardT[s] = cached.shardT || 0; this.dirty[s] = !!cached.dirty; }
       else { this.data[s] = defaults[s]; this.rev[s] = 1; this.saveLocal(s); }
     });
   },
   get(s){ return this.data[s]; },
   saveLocal(s){
-    try { localStorage.setItem('tcmws_' + s, JSON.stringify({rev: this.rev[s], data: this.data[s]})); } catch(e){}
+    try { localStorage.setItem('tcmws_' + s, JSON.stringify({rev: this.rev[s], data: this.data[s], shardT: this.shardT[s] || 0, dirty: !!this.dirty[s]})); } catch(e){}
   },
   markDirty(s){
     this.rev[s] = (this.rev[s] || 1) + 1;
@@ -148,10 +190,12 @@ const Store = {
     try {
       // 冲突合并：推送前先取云端最新，对 ledger 等分片按记录 id 合并，
       // 保证两人同时保存时互不吞掉对方的新增/修改（整本覆盖 → 按记录并集+较新胜出）
-      if(MERGE_SHARDS.has(s)){
+      if(MERGE_SHARDS.has(s) || MERGE_ITEM_SHARDS.has(s)){
         const remote = await this.fetchRemote(s);
         if(remote && remote.data !== undefined){
-          const merged = mergeRecordBooks(this.data[s], remote.data);
+          const merged = MERGE_SHARDS.has(s)
+            ? mergeRecordBooks(this.data[s], remote.data)
+            : mergeItemShard(this.data[s], remote.data);
           if(merged !== null){ this.data[s] = merged; this.saveLocal(s); }
         }
       }
@@ -200,7 +244,17 @@ const Store = {
       // 新鲜度判据：以时间戳 t 为主（各设备本地 rev 在整值覆盖时会回退，不可靠）
       const cloudNewer = force || remoteT > localT || (remote.rev || 0) > (this.rev[s] || 0);
       if(cloudNewer && !(localDirty && !force)){
-        this.data[s] = remote.data;
+        if((MERGE_SHARDS.has(s) || MERGE_ITEM_SHARDS.has(s)) && this.data[s] && remote.data){
+          // 合并型分片：按 id / 记录合并（台账按记录、产品按记录+图片粘性），绝不整值覆盖，
+          // 避免多设备 / 多标签页互相拉取时吞掉对方刚登记或刚上传的图片；
+          // 若本地含云端缺失的数据（并集更大 / 有更优版本），回推云端形成自愈闭环，
+          // 保证任一设备上的修改最终都落到云端，彻底消除「登记后数据丢失」。
+          const merged = mergeShard(s, this.data[s], remote.data);
+          this.data[s] = merged;
+          if(JSON.stringify(merged) !== JSON.stringify(remote.data)) this.markDirty(s);
+        } else {
+          this.data[s] = remote.data;
+        }
         this.rev[s] = Math.max(this.rev[s] || 0, remote.rev || 0); // 取较大值，避免 rev 回退
         this.shardT[s] = remoteT || Date.now();
         this.saveLocal(s);
@@ -284,8 +338,10 @@ const Store = {
   async restoreFromYes(s){
     const y = await this.yesapiPull(s);
     if(!y) return false;
-    if(MERGE_SHARDS.has(s)){
-      const merged = mergeRecordBooks(this.data[s], y.data);
+    if(MERGE_SHARDS.has(s) || MERGE_ITEM_SHARDS.has(s)){
+      const merged = MERGE_SHARDS.has(s)
+        ? mergeRecordBooks(this.data[s], y.data)
+        : mergeItemShard(this.data[s], y.data);
       this.data[s] = (merged !== null) ? merged : y.data;
     } else {
       this.data[s] = y.data;

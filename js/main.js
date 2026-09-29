@@ -83,6 +83,10 @@ window.addEventListener('DOMContentLoaded', async () => {
   setInterval(() => Store.pullAll(), TCM_CONFIG.pollInterval);
   // 页面重新获得焦点时立即同步一次
   document.addEventListener('visibilitychange', () => { if(!document.hidden) Store.pullAll(); });
+  // 卸载 / 隐藏前尽量把本地未保存改动推上云（最佳努力；合并型分片的自愈闭环会兜底，不会丢数据）
+  const _flush = () => { try { Store.flushDirty(); } catch(e){} };
+  window.addEventListener('pagehide', _flush);
+  window.addEventListener('beforeunload', _flush);
   // 固定日期弹窗提醒（每周一、每月1/15/25日）
   setTimeout(() => WorkMod.checkReminder(), 800);
   // 提醒项目「每天重新打卡」弹窗：8 点起提示，未完成每 30 分钟再提示
