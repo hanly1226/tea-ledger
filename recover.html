@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>台账本机数据恢复</title>
+<style>
+  *{box-sizing:border-box}
+  body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;margin:0;background:#f5f6f8;color:#222;padding:16px;line-height:1.5}
+  .card{background:#fff;border-radius:14px;padding:18px;max-width:720px;margin:0 auto 14px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+  h1{font-size:19px;margin:0 0 6px}
+  .sub{color:#888;font-size:13px;margin:0 0 14px}
+  .warn{background:#fff7e6;border:1px solid #ffd591;border-radius:10px;padding:10px 12px;font-size:13px;color:#874d00;margin-bottom:14px}
+  button{font-size:15px;border:none;border-radius:10px;padding:12px 18px;font-weight:600;cursor:pointer}
+  #scan{background:#e8f0ff;color:#1d4ed8}
+  #recover{background:#16a34a;color:#fff}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+  .book{background:#f7f9fc;border-radius:10px;padding:10px 12px;margin:8px 0;font-size:14px}
+  .book b{color:#1d4ed8}
+  .cnt{display:inline-block;min-width:22px;text-align:center;background:#16a34a;color:#fff;border-radius:10px;padding:0 8px;font-size:12px;margin-left:6px}
+  .cnt.zero{background:#bbb}
+  .rec{font-size:12px;color:#555;padding:4px 0;border-top:1px dashed #eee}
+  .rec .d{color:#c0392b;font-weight:700;margin-right:8px}
+  #result{font-size:14px;margin-top:12px;white-space:pre-wrap}
+  .ok{color:#16a34a}.err{color:#c0392b}
+  code{background:#eef;padding:1px 5px;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>台账本机数据恢复</h1>
+  <p class="sub">本工具读取「这台设备」浏览器里缓存的台账 / 产品数据，找出 2026-09-26 之后的记录，合并回云端。</p>
+  <div class="warn">请在 <b>每一台</b> 登记过数据的手机 / 电脑上，单独打开本页各一次（不要同时开着工作台 App）。哪台设备还存着数据，本页会显示出来并一键恢复。</div>
+  <div class="row">
+    <button id="scan">① 扫描本机本地数据</button>
+    <button id="recover" disabled>② 合并回云端</button>
+  </div>
+  <div id="info"></div>
+  <div id="result"></div>
+</div>
+
+<script>
+// ===== 同步常量（与 config.js 一致）=====
+const TCM = { cloudBase:'tcmgy_ws_v1_', readUrl:k=>'https://textdb.online/'+k, updateUrl:'https://textdb.online/update' };
+const CUTOFF = '2026-09-27'; // 视为「丢失区间」的起始日期（含）
+
+// ===== 合并逻辑（与 core.js 一致，保证冲突时按记录/图片粘性并集）=====
+function mergeRecordBooks(local, remote){
+  if(!local || typeof local!=='object' || Array.isArray(local)) return null;
+  if(!remote || typeof remote!=='object' || Array.isArray(remote)) return null;
+  const out = JSON.parse(JSON.stringify(local));
+  for(const book of Object.keys(remote)){
+    const rArr = remote[book];
+    if(!Array.isArray(rArr)){ out[book]=rArr; continue; }
+    if(!Array.isArray(out[book])) out[book]=[];
+    const map = new Map();
+    out[book].forEach(r=>{ if(r&&r.id!=null) map.set(r.id,r); });
+    for(const r of rArr){
+      if(!r||r.id==null){ out[book].push(r); continue; }
+      const ex = map.get(r.id);
+      if(!ex) out[book].push(r);
+      else if((r.t||0) > (ex.t||0)){ const i=out[book].indexOf(ex); if(i>=0) out[book][i]=r; else out[book].push(r); }
+    }
+  }
+  for(const book of Object.keys(out)){
+    if(!Array.isArray(out[book])) continue;
+    const seen=new Map(), kept=[];
+    for(const r of out[book]){
+      if(r&&r._src&&r._src.book&&r._src.id){
+        const k=r._src.book+'#'+r._src.id+'#'+(r._src.cat||'');
+        const ex=seen.get(k);
+        if(!ex){ seen.set(k,r); kept.push(r); }
+        else if((r.t||0)>(ex.t||0)){ const i=kept.indexOf(ex); if(i>=0) kept[i]=r; seen.set(k,r); }
+      } else kept.push(r);
+    }
+    out[book]=kept;
+  }
+  return out;
+}
+function mergeItemShard(local, remote){
+  const lArr = local && Array.isArray(local.items) ? local.items : null;
+  const rArr = remote && Array.isArray(remote.items) ? remote.items : null;
+  if(!lArr && !rArr) return local || remote || {items:[]};
+  if(!lArr) return remote;
+  if(!rArr) return local;
+  const map = new Map();
+  lArr.forEach(p=>{ if(p&&p.id!=null) map.set(p.id,p); });
+  rArr.forEach(p=>{
+    if(!p||p.id==null) return;
+    const ex = map.get(p.id);
+    if(!ex){ map.set(p.id,p); return; }
+    const lImgs=(ex.imgs||[]).length, rImgs=(p.imgs||[]).length;
+    if(lImgs&&!rImgs) map.set(p.id,ex);
+    else if(rImgs&&!lImgs) map.set(p.id,p);
+    else { const lt=ex.t||0, rt=p.t||0; map.set(p.id, rt>=lt?p:ex); }
+  });
+  const out=[], seen=new Set();
+  lArr.forEach(p=>{ if(p&&p.id!=null&&map.has(p.id)){ out.push(map.get(p.id)); seen.add(p.id); } });
+  rArr.forEach(p=>{ if(p&&p.id!=null&&map.has(p.id)&&!seen.has(p.id)){ out.push(map.get(p.id)); seen.add(p.id); } });
+  return {items:out};
+}
+
+// ===== 本地读取 / 云端读写 =====
+const SHARDS = ['ledger','products'];
+function loadLocal(s){
+  try{ const c=JSON.parse(localStorage.getItem('tcmws_'+s)||'null'); if(c&&c.data!==undefined) return c; }catch(e){}
+  return null;
+}
+async function fetchRemote(s){
+  try{
+    const r = await fetch(TCM.readUrl(TCM.cloudBase+s)+'?_='+Date.now(), {cache:'no-store'});
+    if(!r.ok) return null;
+    const text = await r.text();
+    if(!text||!text.trim()) return null;
+    const j = JSON.parse(text);
+    if(j&&j.data!==undefined) return j;
+  }catch(e){}
+  return null;
+}
+async function pushMerged(s, data, rev){
+  const payload = JSON.stringify({rev: rev||Date.now(), device: localStorage.getItem('tcmws_device')||'recover', t:Date.now(), data});
+  const body = new URLSearchParams();
+  body.set('key', TCM.cloudBase+s);
+  body.set('value', payload);
+  try{
+    const r = await fetch(TCM.updateUrl, {method:'POST', body});
+    const j = await r.json().catch(()=>null);
+    return !!(j && j.status===1);
+  }catch(e){ return false; }
+}
+
+// ===== 扫描 =====
+let lastFound = {ledger:0, products:0};
+function scan(){
+  const info = document.getElementById('info');
+  const dev = localStorage.getItem('tcmws_device') || '(未知设备)';
+  let html = '<div class="book">本机设备ID：<code>'+dev+'</code></div>';
+  let total = 0;
+  for(const s of SHARDS){
+    const c = loadLocal(s);
+    if(s==='ledger'){
+      const data = c ? c.data : {};
+      const books = Object.keys(data).filter(b=>Array.isArray(data[b]) && b!=='unpaid');
+      html += '<div class="book"><b>台账 ledger</b></div>';
+      if(!books.length){ html += '<div class="rec">本机无本地台账缓存</div>'; }
+      for(const b of books){
+        const arr = data[b];
+        const after = arr.filter(r=>r&&!r.del&&r.date&&r.date>=CUTOFF);
+        const n = after.length; total += n;
+        html += '<div class="book"><b>'+b+'</b><span class="cnt'+(n?'':' zero')+'">'+n+'</span> 条 ≥'+CUTOFF+'（共'+arr.length+'条）</div>';
+        after.slice(0,8).forEach(r=>{ html += '<div class="rec"><span class="d">'+r.date+'</span>'+(r.items||[]).map(i=>i.product+'×'+(i.qty||1)).join('、')+'</div>'; });
+        if(after.length>8) html += '<div class="rec">…另有 '+(after.length-8)+' 条</div>';
+      }
+    } else if(s==='products'){
+      const items = (c && c.data && Array.isArray(c.data.items)) ? c.data.items.filter(p=>!p.del) : [];
+      const after = items.filter(p=>p&&p.t && new Date(p.t).getTime() >= new Date('2026-09-27').getTime());
+      const n = after.length; total += n;
+      html += '<div class="book"><b>产品 products</b><span class="cnt'+(n?'':' zero')+'">'+n+'</span> 条更新于 ≥'+CUTOFF+'（共'+items.length+'条）</div>';
+      after.slice(0,8).forEach(p=>{ html += '<div class="rec"><span class="d">'+new Date(p.t).toLocaleDateString('zh-CN')+'</span>'+p.name+' '+(p.imgs&&p.imgs.length?('🖼'+p.imgs.length):'')+'</div>'; });
+    }
+  }
+  lastFound = total;
+  html += '<div class="book" style="background:'+(total?'#eafaf0':'#f0f0f0')+'">本机可恢复记录合计：<b>'+(total)+'</b> 条（≥'+CUTOFF+'）</div>';
+  info.innerHTML = html;
+  document.getElementById('recover').disabled = total===0;
+  document.getElementById('result').textContent = '';
+}
+
+// ===== 恢复 =====
+async function recover(){
+  const result = document.getElementById('result');
+  result.innerHTML = '正在合并…';
+  let log = '';
+  for(const s of SHARDS){
+    const c = loadLocal(s);
+    if(!c || c.data===undefined) continue;
+    const remote = await fetchRemote(s);
+    let merged;
+    if(s==='products') merged = mergeItemShard(c.data, remote?remote.data:{items:[]});
+    else merged = mergeRecordBooks(c.data, remote?remote.data:{});
+    const ok = await pushMerged(s, merged, c.rev);
+    const cnt = s==='products' ? (merged.items||[]).length : Object.keys(merged).reduce((a,b)=>a+((merged[b]||[]).length||0),0);
+    log += (ok?'✅ ':'❌ ') + s + '：已合并为 '+cnt+' 条并'+(ok?'推送云端成功':'推送失败，请重试')+'\n';
+  }
+  log += '\n完成后，请在工作台 App 强刷（Ctrl+F5 / Cmd+Shift+R）即可看到恢复的数据。\n若其他设备也有数据，请在那些设备上也打开本页恢复一次。';
+  result.innerHTML = '<span class="'+(log.includes('❌')?'err':'ok')+'">'+log.replace(/\n/g,'<br>')+'</span>';
+}
+
+document.getElementById('scan').addEventListener('click', scan);
+document.getElementById('recover').addEventListener('click', recover);
+scan(); // 打开即自动扫描
+</script>
+</body>
+</html>
