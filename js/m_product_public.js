@@ -4,8 +4,8 @@ function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&
 const PP = {
   key: 'tcmgy_ws_v1_products_public',
   url: 'https://textdb.online/tcmgy_ws_v1_products_public',
-  cats: ['奶茶咖啡', '药食同源食品', '袋泡茶饮', '膏方', '药枕香囊', '合香产品'],
-  curCat: '合香产品',
+  cats: ['奶茶', '咖啡', '食品', '茶饮', '临方', '文创', '合香', '合香（定制）', '礼盒', '中药精品'],
+  curCat: '合香',
   q: '',
   data: [],
   async load(){
@@ -86,7 +86,7 @@ const PP = {
     if(lb) lb.classList.remove('show');
   },
   card(p){
-    const label = (p.cat === '合香产品') ? '香方' : '组成';
+    const label = (p.cat === '合香' || p.cat === '合香（定制）') ? '香方' : '组成';
     const price = (p.price == null) ? '' : ('<span class="pp-price">原价 ¥' + p.price + (p.unit && p.unit !== '元' ? p.unit : '') + '</span>');
     const member = (p.member == null) ? '' : ('<span class="pp-member">会员 ¥' + p.member + '</span>');
     const imgs = (p.imgs && p.imgs.length) ? p.imgs : [];

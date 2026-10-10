@@ -1,10 +1,10 @@
 'use strict';
-TCM_DATA.CATS = ["奶茶咖啡","药食同源食品","袋泡茶饮","膏方","药枕香囊","合香产品"];
+TCM_DATA.CATS = ["奶茶","咖啡","食品","茶饮","临方","文创","合香","合香（定制）","礼盒","中药精品"];
 TCM_DATA.BODY_TYPES = ["平和质","气虚质","阳虚质","阴虚质","痰湿质","湿热质","血瘀质","气郁质","特禀质"];
 TCM_DATA.DEFAULT_PRODUCTS = [
   {
     "id": "p001",
-    "cat": "奶茶咖啡",
+    "cat": "奶茶",
     "name": "冬酿乌梅饮",
     "price": 12,
     "member": 8,
@@ -22,7 +22,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p002",
-    "cat": "奶茶咖啡",
+    "cat": "奶茶",
     "name": "玉润桑杞饮",
     "price": 12,
     "member": 8,
@@ -39,7 +39,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p003",
-    "cat": "奶茶咖啡",
+    "cat": "奶茶",
     "name": "芪薏轻湿饮",
     "price": 12,
     "member": 8,
@@ -56,7 +56,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p004",
-    "cat": "奶茶咖啡",
+    "cat": "奶茶",
     "name": "鲜萃柠檬饮",
     "price": 10,
     "member": 7,
@@ -73,7 +73,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p005",
-    "cat": "奶茶咖啡",
+    "cat": "奶茶",
     "name": "亮颜七白饮",
     "price": 20,
     "member": 16,
@@ -90,7 +90,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p006",
-    "cat": "奶茶咖啡",
+    "cat": "奶茶",
     "name": "养发五黑饮",
     "price": 20,
     "member": 16,
@@ -107,7 +107,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p007",
-    "cat": "奶茶咖啡",
+    "cat": "奶茶",
     "name": "暖姜红茶乳",
     "price": 16,
     "member": 12,
@@ -124,7 +124,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p008",
-    "cat": "奶茶咖啡",
+    "cat": "奶茶",
     "name": "脾安茯麦饮",
     "price": 16,
     "member": 12,
@@ -141,7 +141,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p009",
-    "cat": "奶茶咖啡",
+    "cat": "奶茶",
     "name": "花颜洛神神赋",
     "price": 16,
     "member": 12,
@@ -158,7 +158,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p010",
-    "cat": "奶茶咖啡",
+    "cat": "奶茶",
     "name": "元气参芪颂",
     "price": 16,
     "member": 12,
@@ -175,7 +175,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p011",
-    "cat": "奶茶咖啡",
+    "cat": "咖啡",
     "name": "经典美式",
     "price": 15,
     "member": 12,
@@ -193,7 +193,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p012",
-    "cat": "奶茶咖啡",
+    "cat": "咖啡",
     "name": "醇香拿铁",
     "price": 18,
     "member": 14,
@@ -210,7 +210,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p013",
-    "cat": "奶茶咖啡",
+    "cat": "咖啡",
     "name": "生椰拿铁",
     "price": 20,
     "member": 16,
@@ -227,7 +227,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p014",
-    "cat": "奶茶咖啡",
+    "cat": "咖啡",
     "name": "脾安美式",
     "price": 20,
     "member": 16,
@@ -244,7 +244,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p015",
-    "cat": "奶茶咖啡",
+    "cat": "咖啡",
     "name": "花颜美式",
     "price": 20,
     "member": 16,
@@ -261,7 +261,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p016",
-    "cat": "奶茶咖啡",
+    "cat": "咖啡",
     "name": "元气美式",
     "price": 20,
     "member": 16,
@@ -278,7 +278,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p017",
-    "cat": "奶茶咖啡",
+    "cat": "咖啡",
     "name": "乌梅美式",
     "price": 20,
     "member": 16,
@@ -295,7 +295,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p018",
-    "cat": "奶茶咖啡",
+    "cat": "咖啡",
     "name": "桑杞美式",
     "price": 20,
     "member": 16,
@@ -312,7 +312,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p019",
-    "cat": "奶茶咖啡",
+    "cat": "咖啡",
     "name": "脾安拿铁",
     "price": 24,
     "member": 18,
@@ -329,7 +329,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p020",
-    "cat": "奶茶咖啡",
+    "cat": "咖啡",
     "name": "花颜拿铁",
     "price": 24,
     "member": 18,
@@ -346,7 +346,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p021",
-    "cat": "奶茶咖啡",
+    "cat": "咖啡",
     "name": "元气拿铁",
     "price": 24,
     "member": 18,
@@ -363,7 +363,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p022",
-    "cat": "奶茶咖啡",
+    "cat": "咖啡",
     "name": "七白拿铁",
     "price": 24,
     "member": 18,
@@ -380,7 +380,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p023",
-    "cat": "奶茶咖啡",
+    "cat": "咖啡",
     "name": "五黑拿铁",
     "price": 24,
     "member": 18,
@@ -397,7 +397,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p024",
-    "cat": "药食同源食品",
+    "cat": "食品",
     "name": "龟苓膏",
     "price": 12,
     "member": 10,
@@ -414,7 +414,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p025",
-    "cat": "药食同源食品",
+    "cat": "食品",
     "name": "八珍糕",
     "price": 25,
     "member": 20,
@@ -432,7 +432,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p026",
-    "cat": "药食同源食品",
+    "cat": "食品",
     "name": "八珍面包",
     "price": 20,
     "member": 16,
@@ -450,7 +450,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p027",
-    "cat": "药食同源食品",
+    "cat": "食品",
     "name": "八珍饼干",
     "price": 28,
     "member": 26,
@@ -468,7 +468,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p028",
-    "cat": "药食同源食品",
+    "cat": "食品",
     "name": "梨膏软糖",
     "price": 28,
     "member": null,
@@ -486,7 +486,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p029",
-    "cat": "袋泡茶饮",
+    "cat": "茶饮",
     "name": "降脂茶",
     "price": 40,
     "member": null,
@@ -502,7 +502,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p030",
-    "cat": "袋泡茶饮",
+    "cat": "茶饮",
     "name": "祛湿茶",
     "price": 40,
     "member": null,
@@ -518,7 +518,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p031",
-    "cat": "袋泡茶饮",
+    "cat": "茶饮",
     "name": "健脾茶",
     "price": 40,
     "member": null,
@@ -534,7 +534,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p032",
-    "cat": "袋泡茶饮",
+    "cat": "茶饮",
     "name": "降压茶",
     "price": 40,
     "member": null,
@@ -551,7 +551,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p033",
-    "cat": "袋泡茶饮",
+    "cat": "茶饮",
     "name": "解酒养肝茶",
     "price": 40,
     "member": null,
@@ -567,7 +567,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p034",
-    "cat": "袋泡茶饮",
+    "cat": "茶饮",
     "name": "疏肝解郁茶",
     "price": 40,
     "member": null,
@@ -583,7 +583,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p035",
-    "cat": "袋泡茶饮",
+    "cat": "茶饮",
     "name": "美白淡斑茶",
     "price": 40,
     "member": null,
@@ -600,7 +600,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p036",
-    "cat": "袋泡茶饮",
+    "cat": "茶饮",
     "name": "利咽润喉茶",
     "price": 40,
     "member": null,
@@ -614,7 +614,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p037",
-    "cat": "袋泡茶饮",
+    "cat": "茶饮",
     "name": "益气养阴茶",
     "price": 40,
     "member": null,
@@ -632,7 +632,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p038",
-    "cat": "袋泡茶饮",
+    "cat": "茶饮",
     "name": "润肺茶",
     "price": 40,
     "member": null,
@@ -649,7 +649,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p039",
-    "cat": "袋泡茶饮",
+    "cat": "茶饮",
     "name": "酸梅汤",
     "price": 32,
     "member": null,
@@ -667,7 +667,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p040",
-    "cat": "膏方",
+    "cat": "临方",
     "name": "秋梨膏",
     "price": 32,
     "member": null,
@@ -683,7 +683,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p041",
-    "cat": "膏方",
+    "cat": "临方",
     "name": "杞葚膏",
     "price": 102,
     "member": null,
@@ -700,7 +700,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p042",
-    "cat": "膏方",
+    "cat": "临方",
     "name": "小儿健脾膏",
     "price": 260,
     "member": null,
@@ -714,7 +714,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p043",
-    "cat": "膏方",
+    "cat": "临方",
     "name": "解酒养肝膏",
     "price": 260,
     "member": null,
@@ -730,7 +730,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p044",
-    "cat": "膏方",
+    "cat": "临方",
     "name": "酸枣仁膏",
     "price": 360,
     "member": null,
@@ -746,7 +746,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p045",
-    "cat": "膏方",
+    "cat": "临方",
     "name": "十全大补膏",
     "price": 288,
     "member": null,
@@ -764,7 +764,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p046",
-    "cat": "膏方",
+    "cat": "临方",
     "name": "补阳还五膏",
     "price": 360,
     "member": null,
@@ -781,7 +781,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p047",
-    "cat": "膏方",
+    "cat": "临方",
     "name": "防眩膏",
     "price": 368,
     "member": null,
@@ -797,7 +797,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p048",
-    "cat": "药枕香囊",
+    "cat": "文创",
     "name": "中药养生锤",
     "price": 16,
     "member": null,
@@ -813,7 +813,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p049",
-    "cat": "药枕香囊",
+    "cat": "文创",
     "name": "中药失眠枕",
     "price": 188,
     "member": null,
@@ -827,7 +827,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p050",
-    "cat": "药枕香囊",
+    "cat": "文创",
     "name": "中药颈椎枕",
     "price": 188,
     "member": null,
@@ -841,7 +841,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p051",
-    "cat": "药枕香囊",
+    "cat": "文创",
     "name": "中药鼻炎枕",
     "price": 188,
     "member": null,
@@ -857,7 +857,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p052",
-    "cat": "药枕香囊",
+    "cat": "文创",
     "name": "传统香囊",
     "price": null,
     "member": null,
@@ -874,7 +874,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p053",
-    "cat": "药枕香囊",
+    "cat": "文创",
     "name": "驱蚊香囊",
     "price": null,
     "member": null,
@@ -890,7 +890,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p054",
-    "cat": "药枕香囊",
+    "cat": "文创",
     "name": "醒脑香囊",
     "price": null,
     "member": null,
@@ -908,7 +908,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p055",
-    "cat": "药枕香囊",
+    "cat": "文创",
     "name": "鼻炎香囊",
     "price": null,
     "member": null,
@@ -924,7 +924,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p056",
-    "cat": "药枕香囊",
+    "cat": "文创",
     "name": "安神香囊",
     "price": null,
     "member": null,
@@ -940,7 +940,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p057",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "01 何首乌梳",
     "price": 148,
     "member": 148,
@@ -960,7 +960,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p058",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "02 按摩梳",
     "price": null,
     "member": null,
@@ -980,7 +980,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p059",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "03 丹皮梳",
     "price": null,
     "member": null,
@@ -1000,7 +1000,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p060",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "04 白龙涎",
     "price": null,
     "member": null,
@@ -1020,7 +1020,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p061",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "05 白龙涎",
     "price": null,
     "member": null,
@@ -1040,7 +1040,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p062",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "06 白龙涎",
     "price": null,
     "member": null,
@@ -1060,7 +1060,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p063",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "07 白龙涎",
     "price": null,
     "member": null,
@@ -1080,7 +1080,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p064",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "08 千伶香雕刻",
     "price": null,
     "member": null,
@@ -1100,7 +1100,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p065",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "09 玫瑰舒颜九解香",
     "price": null,
     "member": null,
@@ -1121,7 +1121,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p066",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "10 千伶香",
     "price": null,
     "member": null,
@@ -1141,7 +1141,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p067",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "11 花蕊夫人",
     "price": null,
     "member": null,
@@ -1161,7 +1161,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p068",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "12 花蕊夫人",
     "price": null,
     "member": null,
@@ -1181,7 +1181,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p069",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "13 木香息肌丸",
     "price": null,
     "member": null,
@@ -1201,7 +1201,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p070",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "14 木香息肌丸",
     "price": null,
     "member": null,
@@ -1221,7 +1221,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p071",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "15 木香息肌丸",
     "price": null,
     "member": null,
@@ -1241,7 +1241,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p072",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "16 古方柠檬香",
     "price": null,
     "member": null,
@@ -1261,7 +1261,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p073",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "17 古方柠檬香",
     "price": null,
     "member": null,
@@ -1281,7 +1281,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p074",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "18 固本培元香",
     "price": null,
     "member": null,
@@ -1301,7 +1301,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p075",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "19 鹅梨帐中香",
     "price": null,
     "member": null,
@@ -1321,7 +1321,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p076",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "20 鹅梨帐中香",
     "price": null,
     "member": null,
@@ -1341,7 +1341,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p077",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "21 鹅梨帐中香",
     "price": null,
     "member": null,
@@ -1361,7 +1361,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p078",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "22 鹅梨帐中香",
     "price": null,
     "member": null,
@@ -1381,7 +1381,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p079",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "23 黄财神",
     "price": null,
     "member": null,
@@ -1401,7 +1401,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p080",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "24 云岫艾桂香",
     "price": null,
     "member": null,
@@ -1421,7 +1421,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p081",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "25 云岫招财香",
     "price": null,
     "member": null,
@@ -1441,7 +1441,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p082",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "26 松塔香",
     "price": null,
     "member": null,
@@ -1461,7 +1461,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p083",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "27 茉莉绿茶",
     "price": null,
     "member": null,
@@ -1481,7 +1481,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p084",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "28 墨红玫瑰酸枣仁",
     "price": null,
     "member": null,
@@ -1501,7 +1501,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p085",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "29 五行珠",
     "price": null,
     "member": null,
@@ -1528,7 +1528,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p086",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "30 五行珠",
     "price": null,
     "member": null,
@@ -1555,7 +1555,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p087",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "31 古方柠檬香",
     "price": null,
     "member": null,
@@ -1575,7 +1575,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p088",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "32 無上清凉香",
     "price": null,
     "member": null,
@@ -1595,7 +1595,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p089",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "33 木香息肌丸",
     "price": null,
     "member": null,
@@ -1615,7 +1615,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p090",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "34 固本培元香",
     "price": null,
     "member": null,
@@ -1635,7 +1635,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p091",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "35 鹅梨帐中香",
     "price": null,
     "member": null,
@@ -1655,7 +1655,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p092",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "36 万福牌",
     "price": null,
     "member": null,
@@ -1675,7 +1675,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p093",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "37 麒麟牌车挂（固本培元方）",
     "price": null,
     "member": null,
@@ -1695,7 +1695,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p094",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "38 狐狸香牌（降真香）",
     "price": null,
     "member": null,
@@ -1715,7 +1715,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p095",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "39 山鬼花钱",
     "price": null,
     "member": null,
@@ -1735,7 +1735,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p096",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "40 福字锁（鹅梨方）",
     "price": null,
     "member": null,
@@ -1755,7 +1755,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p097",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "41 如意锁",
     "price": null,
     "member": null,
@@ -1775,7 +1775,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p098",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "42 金葫芦（绛云暖香）",
     "price": null,
     "member": null,
@@ -1795,7 +1795,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p099",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "43 白龙涎",
     "price": null,
     "member": null,
@@ -1815,7 +1815,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p100",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "44 茉莉绿茶",
     "price": null,
     "member": null,
@@ -1835,7 +1835,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p101",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "45 松塔香",
     "price": null,
     "member": null,
@@ -1855,7 +1855,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p102",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "46 狐狸香牌项链（降真香）",
     "price": null,
     "member": null,
@@ -1875,7 +1875,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p103",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "47 葡萄系列香珠",
     "price": null,
     "member": null,
@@ -1896,7 +1896,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p104",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "48 茉莉绿茶",
     "price": null,
     "member": null,
@@ -1916,7 +1916,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p105",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "49 亳芍凝香",
     "price": null,
     "member": null,
@@ -1936,7 +1936,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p106",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "50 云岫艾桂香",
     "price": null,
     "member": null,
@@ -1956,7 +1956,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p134",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "51 玫瑰舒颜九解香",
     "price": null,
     "member": null,
@@ -1977,7 +1977,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p107",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "G1 芳华",
     "price": null,
     "member": null,
@@ -1997,7 +1997,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p108",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "G3 亳芍凝香",
     "price": null,
     "member": null,
@@ -2017,7 +2017,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p109",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "G4 云岫艾桂",
     "price": null,
     "member": null,
@@ -2037,7 +2037,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p110",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "G5 玫瑰降真",
     "price": null,
     "member": null,
@@ -2057,7 +2057,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p111",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "S2 花蕊夫人",
     "price": null,
     "member": null,
@@ -2077,7 +2077,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p112",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "S3 茉莉绿茶",
     "price": null,
     "member": null,
@@ -2097,7 +2097,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p113",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "S4 墨红玫瑰酸枣仁",
     "price": null,
     "member": null,
@@ -2117,7 +2117,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p114",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "S5 木香息肌丸",
     "price": null,
     "member": null,
@@ -2137,7 +2137,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p115",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "S11 御制雍正",
     "price": null,
     "member": null,
@@ -2157,7 +2157,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p116",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "S12 固本培元香",
     "price": null,
     "member": null,
@@ -2177,7 +2177,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p117",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "S13 白龙涎",
     "price": null,
     "member": null,
@@ -2197,7 +2197,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p118",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "S14 鹅梨帐中香",
     "price": null,
     "member": null,
@@ -2217,7 +2217,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p119",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "S16 玫瑰舒颜九解香",
     "price": null,
     "member": null,
@@ -2238,7 +2238,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p120",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "发簪FZ1【状元闻思香】",
     "price": null,
     "member": null,
@@ -2254,7 +2254,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p121",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "发簪FZ2【千伶香】",
     "price": null,
     "member": null,
@@ -2270,7 +2270,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p122",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "发簪FZ3【龙井玉茶】",
     "price": null,
     "member": null,
@@ -2286,7 +2286,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p123",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "发簪FZ4【本命香】",
     "price": null,
     "member": null,
@@ -2303,7 +2303,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p124",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "耳饰ES1【状元闻思香】",
     "price": null,
     "member": null,
@@ -2319,7 +2319,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p125",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "耳饰ES2【亳芍凝香】",
     "price": null,
     "member": null,
@@ -2335,7 +2335,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p126",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "耳饰ES3【贵妃香】",
     "price": null,
     "member": null,
@@ -2349,7 +2349,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p127",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "耳饰ES4【龙井玉茶】",
     "price": null,
     "member": null,
@@ -2365,7 +2365,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p128",
-    "cat": "合香产品",
+    "cat": "合香",
     "name": "耳饰ES5【木樨香】",
     "price": null,
     "member": null,
@@ -2381,7 +2381,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p129",
-    "cat": "合香产品",
+    "cat": "合香（定制）",
     "name": "高端定制·苏合行气香",
     "price": null,
     "member": null,
@@ -2397,7 +2397,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p130",
-    "cat": "合香产品",
+    "cat": "合香（定制）",
     "name": "高端定制·疏肝解郁香",
     "price": null,
     "member": null,
@@ -2413,7 +2413,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p131",
-    "cat": "合香产品",
+    "cat": "合香（定制）",
     "name": "高端定制·开窍醒神香",
     "price": null,
     "member": null,
@@ -2430,7 +2430,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p132",
-    "cat": "合香产品",
+    "cat": "合香（定制）",
     "name": "高端定制·解忧逍遥香",
     "price": null,
     "member": null,
@@ -2447,7 +2447,7 @@ TCM_DATA.DEFAULT_PRODUCTS = [
   },
   {
     "id": "p133",
-    "cat": "合香产品",
+    "cat": "合香（定制）",
     "name": "高端定制·明目合香",
     "price": null,
     "member": null,

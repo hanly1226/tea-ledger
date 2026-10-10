@@ -762,24 +762,35 @@ const LedgerMod = {
   // ===== 跨账本自动同步：来源账本含指定类目产品时，自动拆出同步到目标账本 =====
   // 规则：from 账本中命中 cat 类目的产品，会拆成一份写入 to 账本，收款方式记 tag 便于区分；幂等（按来源 id + 类目关联）。
   SYNC_RULES: [
-    {from: 'reception', to: 'bracelet', cat: '合香产品',   tag: '院内', prefix: '院内接待'},
-    {from: 'group',     to: 'bracelet', cat: '合香产品',   tag: '单位', prefix: '单位订购'},
-    {from: 'reception', to: 'sales',    cat: '袋泡茶饮',   tag: '院内', prefix: '院内接待'},
-    {from: 'group',     to: 'sales',    cat: '袋泡茶饮',   tag: '单位', prefix: '单位订购'}
+    {from: 'reception', to: 'bracelet', cat: '合香', tag: '院内', prefix: '院内接待'},
+    {from: 'group',     to: 'bracelet', cat: '合香', tag: '单位', prefix: '单位订购'},
+    {from: 'reception', to: 'sales',    cat: '茶饮', tag: '院内', prefix: '院内接待'},
+    {from: 'group',     to: 'sales',    cat: '茶饮', tag: '单位', prefix: '单位订购'}
   ],
-  // 判断产品是否属于某类目
+  // 规则类目组 → 实际产品分类（一个组可涵盖多个分类，如「合香」含普通与定制）
+  CAT_GROUPS: {
+    '合香': ['合香', '合香（定制）'],
+    '茶饮': ['茶饮']
+  },
+  // 判断产品是否属于某规则类目组
   isCat(name, cat){
     const p = Store.get('products').items.find(p => !p.del && p.name === name);
-    return !!(p && p.cat === cat);
+    if(!p) return false;
+    const cats = this.CAT_GROUPS[cat] || [cat];
+    return cats.indexOf(p.cat) >= 0;
   },
   // 首次进入时，按规则把来源账本里命中类目的订单同步到目标账本（幂等，仅执行一次）
   syncAllInitial(){
     if(this._syncInit) return;
     this._syncInit = true;
-    // 历史兜底：早期规则误用来源键 'unit'，统一修正为正确的 'group'，保证后续取消同步能匹配到副本
+    // 历史兜底：早期规则误用来源键 'unit' 修正为 'group'；旧产品分类名同步为规则类目组（合香产品→合香 / 袋泡茶饮→茶饮）
     let fixed = false;
     Object.keys(this.BOOKS).forEach(bk => {
-      this.raw(bk).forEach(r => { if(r._src && r._src.book === 'unit'){ r._src.book = 'group'; fixed = true; } });
+      this.raw(bk).forEach(r => {
+        if(r._src && r._src.book === 'unit'){ r._src.book = 'group'; fixed = true; }
+        if(r._src && r._src.cat === '合香产品'){ r._src.cat = '合香'; fixed = true; }
+        if(r._src && r._src.cat === '袋泡茶饮'){ r._src.cat = '茶饮'; fixed = true; }
+      });
     });
     this.SYNC_RULES.forEach(r => {
       this.rows(r.from).forEach(rec => this.syncRuleRecord(r, rec.id, false));

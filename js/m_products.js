@@ -10,8 +10,8 @@ const ProdMod = {
     if(p.staff != null) s += ' <span class="muted">｜职工¥' + p.staff + '</span>';
     return s;
   },
-  // 组成字段标签：合香产品称「香方」，其余产品称「组成」
-  isIncense(p){ return !!(p && p.cat === '合香产品'); },
+  // 组成字段标签：合香类（合香 / 合香（定制））称「香方」，其余产品称「组成」
+  isIncense(p){ return !!(p && (p.cat === '合香' || p.cat === '合香（定制）')); },
   formulaLabel(p){ return this.isIncense(p) ? '香方' : '组成'; },
   render(){
     const el = $('#content');
@@ -27,7 +27,7 @@ const ProdMod = {
       'onkeydown="if(event.key===\'Escape\'){ProdMod.clearSearch()}">' +
       (this.q ? '<button class="btn ghost sm" onclick="ProdMod.clearSearch()">✕ 清除</button>' : '') +
       '</div>' +
-      '<div class="hint">共 ' + prods.length + ' 个产品 · 6 大类 · 产品数据与节气文案、体质匹配自动联动。</div>' +
+      '<div class="hint">共 ' + prods.length + ' 个产品 · 10 大类 · 产品数据与节气文案、体质匹配自动联动。</div>' +
       '<div id="prod-body">' + this.bodyHtml() + '</div>';
   },
   // 搜索：编号精确 > 编号前缀 > 名称开头 > 名称包含；名称无命中时按香方/功效/人群等内容兜底
