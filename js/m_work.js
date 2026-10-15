@@ -1,11 +1,11 @@
 'use strict';
 // ============ 2️⃣ 日常工作进度 ============
 const WK = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-// 经营数据：早班/晚班各按 7 个渠道分别填金额（现金/微信支付宝/美团/淘宝/小程序/挂号/食堂卡）
-const BIZ_EARLY = ['salesEarlyCash', 'salesEarlyWx', 'salesEarlyMeituan', 'salesEarlyTaobao', 'salesEarlyMini', 'salesEarlyGuahao', 'salesEarlyCanteen'];
-const BIZ_LATE  = ['salesLateCash', 'salesLateWx', 'salesLateMeituan', 'salesLateTaobao', 'salesLateMini', 'salesLateGuahao', 'salesLateCanteen'];
+// 经营数据：早班/晚班各按 8 个渠道分别填金额（现金/微信支付宝/美团/淘宝/小程序/挂号/食堂卡/云惠购）
+const BIZ_EARLY = ['salesEarlyCash', 'salesEarlyWx', 'salesEarlyMeituan', 'salesEarlyTaobao', 'salesEarlyMini', 'salesEarlyGuahao', 'salesEarlyCanteen', 'salesEarlyYunhui'];
+const BIZ_LATE  = ['salesLateCash', 'salesLateWx', 'salesLateMeituan', 'salesLateTaobao', 'salesLateMini', 'salesLateGuahao', 'salesLateCanteen', 'salesLateYunhui'];
 const BIZ_CH = BIZ_EARLY.concat(BIZ_LATE);
-const BIZ_CH_LABEL = {Cash: '现金', Wx: '微信/支付宝', Meituan: '美团', Taobao: '淘宝', Mini: '小程序', Guahao: '挂号', Canteen: '食堂卡'};
+const BIZ_CH_LABEL = {Cash: '现金', Wx: '微信/支付宝', Meituan: '美团', Taobao: '淘宝', Mini: '小程序', Guahao: '挂号', Canteen: '食堂卡', Yunhui: '云惠购'};
 const WorkMod = {
   selDate: todayStr(),
   bizDate: todayStr(),
@@ -316,11 +316,11 @@ const WorkMod = {
   biz(s){
     const w = Store.get('work'); if(!w.biz) w.biz = {};
     if(!w.biz[s]) w.biz[s] = {flowIn: 0, flowOut: 0, salesEarly: 0, salesLate: 0, meituan: 0, taobao: 0, mini: 0,
-      salesEarlyCash: 0, salesEarlyWx: 0, salesEarlyMeituan: 0, salesEarlyTaobao: 0, salesEarlyMini: 0, salesEarlyGuahao: 0, salesEarlyCanteen: 0,
-      salesLateCash: 0, salesLateWx: 0, salesLateMeituan: 0, salesLateTaobao: 0, salesLateMini: 0, salesLateGuahao: 0, salesLateCanteen: 0};
+      salesEarlyCash: 0, salesEarlyWx: 0, salesEarlyMeituan: 0, salesEarlyTaobao: 0, salesEarlyMini: 0, salesEarlyGuahao: 0, salesEarlyCanteen: 0, salesEarlyYunhui: 0,
+      salesLateCash: 0, salesLateWx: 0, salesLateMeituan: 0, salesLateTaobao: 0, salesLateMini: 0, salesLateGuahao: 0, salesLateCanteen: 0, salesLateYunhui: 0};
     return w.biz[s];
   },
-  // 将某天记录拆成「早班 / 晚班」各 7 渠道金额（含旧数据兜底：仅有早/晚班合计时归入现金列）
+  // 将某天记录拆成「早班 / 晚班」各 8 渠道金额（含旧数据兜底：仅有早/晚班合计时归入现金列）
   bizChannels(r){
     const hasCh = BIZ_CH.some(k => r[k] != null);
     const e = {}, l = {};
@@ -417,7 +417,7 @@ const WorkMod = {
         '</div>' +
         '<button class="btn" onclick="WorkMod.saveBiz()">保存 ' + d.slice(5) + ' 数据</button>' +
       '</div>' +
-      '<div class="hint">早班、晚班营业额按 <b>现金 / 微信支付宝 / 美团 / 淘宝 / 小程序 / 挂号 / 食堂卡</b> 七个渠道分别填写金额，系统自动合计各班与当天总营业额；人流量按 (进店 + 出店) ÷ 2 自动计算。历史旧数据（只有「营业额」合计）首次保存后会自动归入各班「现金」列。</div>' +
+      '<div class="hint">早班、晚班营业额按 <b>现金 / 微信支付宝 / 美团 / 淘宝 / 小程序 / 挂号 / 食堂卡 / 云惠购</b> 八个渠道分别填写金额，系统自动合计各班与当天总营业额；人流量按 (进店 + 出店) ÷ 2 自动计算。历史旧数据（只有「营业额」合计）首次保存后会自动归入各班「现金」列。</div>' +
       this.renderBizWeek() +
       '<h3 style="margin-top:14px">📈 月度分析 ' +
       '<input autocomplete="off" type="month"  value="' + month + '" onchange="WorkMod.setBizMonth(this.value)" ' +
@@ -545,7 +545,7 @@ const WorkMod = {
     const fin = +($('#biz-flowIn').value || 0), fout = +($('#biz-flowOut').value || 0);
     const el = $('#biz-flow'); if(el) el.value = Math.round((fin + fout) / 2);
   },
-  // 早班 / 晚班 各 7 渠道金额实时合计 → 各班合计与当天总营业额
+  // 早班 / 晚班 各 8 渠道金额实时合计 → 各班合计与当天总营业额
   calcBizTotal(){
     let e = 0, l = 0;
     BIZ_EARLY.forEach(k => { const el = document.getElementById('biz-' + k); if(el) e += (+el.value || 0); });
@@ -573,10 +573,12 @@ const WorkMod = {
     const w = Store.get('work'); const biz = w.biz || {};
     const days = Object.keys(biz).filter(k => k.slice(0, 7) === month).sort();
     if(!days.length){ toast('本月暂无数据可导出', false); return; }
-    const head = ['日期', '星期', '进店', '出店', '人流量',
-      '早班现金', '早班微信/支付宝', '早班美团', '早班淘宝', '早班小程序', '早班挂号', '早班食堂卡', '早班营业额',
-      '晚班现金', '晚班微信/支付宝', '晚班美团', '晚班淘宝', '晚班小程序', '晚班挂号', '晚班食堂卡', '晚班营业额',
-      '营业额合计', '美团单量', '淘宝单量', '小程序单量', '总单量', '客单价'];
+    const earlyHdr = BIZ_EARLY.map(k => '早班' + BIZ_CH_LABEL[k.slice('salesEarly'.length)]);
+    const lateHdr  = BIZ_LATE.map(k => '晚班' + BIZ_CH_LABEL[k.slice('salesLate'.length)]);
+    const head = ['日期', '星期', '进店', '出店', '人流量']
+      .concat(earlyHdr).concat(['早班营业额'])
+      .concat(lateHdr).concat(['晚班营业额'])
+      .concat(['营业额合计', '美团单量', '淘宝单量', '小程序单量', '总单量', '客单价']);
     const rows = days.map(k => {
       const r = biz[k];
       const fin = +r.flowIn || 0, fout = +r.flowOut || 0;
@@ -587,10 +589,10 @@ const WorkMod = {
       const mt = +r.meituan || 0, tb = +r.taobao || 0, mn = +r.mini || 0;
       const orders = mt + tb + mn;
       const unit = fl ? (sa / fl) : 0;
-      return [k, weekdayCn(k).replace('星期', '周'), fin, fout, fl,
-        eArr[0], eArr[1], eArr[2], eArr[3], eArr[4], eArr[5], eArr[6], se.toFixed(2),
-        lArr[0], lArr[1], lArr[2], lArr[3], lArr[4], lArr[5], lArr[6], sl.toFixed(2),
-        sa.toFixed(2), mt, tb, mn, orders, unit.toFixed(2)];
+      return [k, weekdayCn(k).replace('星期', '周'), fin, fout, fl]
+        .concat(eArr).concat([se.toFixed(2)])
+        .concat(lArr).concat([sl.toFixed(2)])
+        .concat([sa.toFixed(2), mt, tb, mn, orders, unit.toFixed(2)]);
     });
     const lines = [head.join(',')].concat(rows.map(r => r.join(',')));
     const blob = new Blob(['\ufeff' + lines.join('\n')], {type: 'text/csv;charset=utf-8'});
@@ -674,8 +676,8 @@ const WorkMod = {
     // 扫描表头，建立 字段→列名 映射
     const fields = {date: null, flowIn: null, flowOut: null, flow: null, sales: null,
       salesEarly: null, salesLate: null,
-      salesEarlyCash: null, salesEarlyWx: null, salesEarlyMeituan: null, salesEarlyTaobao: null, salesEarlyMini: null, salesEarlyGuahao: null, salesEarlyCanteen: null,
-      salesLateCash: null, salesLateWx: null, salesLateMeituan: null, salesLateTaobao: null, salesLateMini: null, salesLateGuahao: null, salesLateCanteen: null,
+      salesEarlyCash: null, salesEarlyWx: null, salesEarlyMeituan: null, salesEarlyTaobao: null, salesEarlyMini: null, salesEarlyGuahao: null, salesEarlyCanteen: null, salesEarlyYunhui: null,
+      salesLateCash: null, salesLateWx: null, salesLateMeituan: null, salesLateTaobao: null, salesLateMini: null, salesLateGuahao: null, salesLateCanteen: null, salesLateYunhui: null,
       meituan: null, taobao: null, mini: null};
     const first = rows[0];
     Object.keys(first).forEach(k => {
@@ -755,6 +757,7 @@ const WorkMod = {
     if(/早班/.test(h) && /小程序/.test(h)) return 'salesEarlyMini';
     if(/早班/.test(h) && /(挂号|挂號)/.test(h)) return 'salesEarlyGuahao';
     if(/早班/.test(h) && /(食堂|饭卡|餐卡|饭堂)/.test(h)) return 'salesEarlyCanteen';
+    if(/早班/.test(h) && /云惠购|云惠|yunhui/i.test(h)) return 'salesEarlyYunhui';
     if(/晚班/.test(h) && /现金/.test(h)) return 'salesLateCash';
     if(/晚班/.test(h) && /(微信|支付宝|wx|wechat)/.test(h)) return 'salesLateWx';
     if(/晚班/.test(h) && /美团/.test(h)) return 'salesLateMeituan';
@@ -762,6 +765,7 @@ const WorkMod = {
     if(/晚班/.test(h) && /小程序/.test(h)) return 'salesLateMini';
     if(/晚班/.test(h) && /(挂号|挂號)/.test(h)) return 'salesLateGuahao';
     if(/晚班/.test(h) && /(食堂|饭卡|餐卡|饭堂)/.test(h)) return 'salesLateCanteen';
+    if(/晚班/.test(h) && /云惠购|云惠|yunhui/i.test(h)) return 'salesLateYunhui';
     if(/早班/.test(h) && /营业额/.test(h)) return 'salesEarly';
     if(/晚班/.test(h) && /营业额/.test(h)) return 'salesLate';
     if(/营业额|营收|销售额|销售|金额|sales/.test(h)) return 'sales';
@@ -794,13 +798,15 @@ const WorkMod = {
     return null;
   },
   downloadBizTemplate(){
+    const earlyHdr = BIZ_EARLY.map(k => '早班' + BIZ_CH_LABEL[k.slice('salesEarly'.length)]);
+    const lateHdr  = BIZ_LATE.map(k => '晚班' + BIZ_CH_LABEL[k.slice('salesLate'.length)]);
+    const head = ['日期', '进店', '出店'].concat(earlyHdr).concat(lateHdr).concat(['美团单量', '淘宝单量', '小程序单量']);
+    const eS1 = [800, 400, 100, 80, 60, 30, 30, 50], lS1 = [500, 300, 80, 60, 40, 20, 20, 30];
+    const eS2 = [880, 420, 110, 90, 64, 32, 28, 60], lS2 = [540, 320, 86, 64, 46, 22, 18, 36];
     const aoa = [
-      ['日期', '进店', '出店',
-       '早班现金', '早班微信/支付宝', '早班美团', '早班淘宝', '早班小程序', '早班挂号', '早班食堂卡',
-       '晚班现金', '晚班微信/支付宝', '晚班美团', '晚班淘宝', '晚班小程序', '晚班挂号', '晚班食堂卡',
-       '美团单量', '淘宝单量', '小程序单量'],
-      ['2026-08-01', 120, 110, 800, 400, 100, 80, 60, 30, 30, 500, 300, 80, 60, 40, 20, 20, 30, 15, 40],
-      ['2026-08-02', 135, 128, 880, 420, 110, 90, 64, 32, 28, 540, 320, 86, 64, 46, 22, 18, 35, 18, 52]
+      head,
+      ['2026-08-01', 120, 110].concat(eS1).concat(lS1).concat([30, 15, 40]),
+      ['2026-08-02', 135, 128].concat(eS2).concat(lS2).concat([35, 18, 52])
     ];
     // 优先用 XLSX 生成真正的 .xlsx；若库未加载（如网络受限），自动兜底为 CSV
     if(typeof XLSX !== 'undefined'){

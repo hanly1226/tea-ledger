@@ -1,7 +1,26 @@
 # -*- coding: utf-8 -*-
 import io, csv, json, os, sys, subprocess, datetime
 
-TD = r"C:\Users\Administrator\.workbuddy\plugins\cache\workbuddy-builtin\tencent-docs-plugin\5.5.6-wb.38337834.g5f969292.h4918b5ced607\skills\tencent-docs\tencentdocs.py"
+def _discover_td():
+    """自动发现最新 tencent-docs-plugin 的 tencentdocs.py 路径，避免插件升级后
+    硬编码版本号失效（历史上 1.0.0→1.0.3→5.5.6 均因升级被删而 can't open file）。
+    取按 tencentdocs.py 修改时间最新的可用目录；若全部缺失则回退到最近一次已知路径。"""
+    import glob
+    base = r"C:\Users\Administrator\.workbuddy\plugins\cache\workbuddy-builtin\tencent-docs-plugin"
+    candidates = []
+    for d in glob.glob(os.path.join(base, '*')):
+        if not os.path.isdir(d):
+            continue
+        p = os.path.join(d, 'skills', 'tencent-docs', 'tencentdocs.py')
+        if os.path.exists(p):
+            candidates.append(d)
+    if candidates:
+        candidates.sort(key=lambda d: os.path.getmtime(os.path.join(d, 'skills', 'tencent-docs', 'tencentdocs.py')), reverse=True)
+        return os.path.join(candidates[0], 'skills', 'tencent-docs', 'tencentdocs.py')
+    # 兜底：最近一次已知路径（仅当目录下无任何可用版本时）
+    return r"C:\Users\Administrator\.workbuddy\plugins\cache\workbuddy-builtin\tencent-docs-plugin\5.6.2-wb.39298511.g37a65c0b.he233403f909a\skills\tencent-docs\tencentdocs.py"
+
+TD = _discover_td()
 CLOUD = r"C:\Users\Administrator\WorkBuddy\2026-08-19-11-15-33\clone\data_export\cloud"
 OUT = r"C:\Users\Administrator\WorkBuddy\2026-08-19-11-15-33\clone\data_export\tdoc_manifest.json"
 
