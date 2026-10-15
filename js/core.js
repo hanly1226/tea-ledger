@@ -157,7 +157,7 @@ function speak(text){
 }
 
 // ============ 云端同步存储引擎（textdb.online 分片存储 + localStorage 缓存）============
-const SHARDS = ['todo','work','wellness','products','ledger','schedule','settings','memo','finance'];
+const SHARDS = ['todo','work','wellness','products','ledger','schedule','settings','memo'];
 const Store = {
   data: {}, rev: {}, shardT: {}, device: '', pushTimers: {}, pushing: {}, pendingPush: {}, dirty: {},
   lastSync: 0, cloudOk: null, onRemote: null,

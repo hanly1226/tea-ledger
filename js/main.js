@@ -11,7 +11,6 @@ const Nav = {
     ledger:  {label: '运营台账', icon: '📒', mod: () => LedgerMod},
     schedule:{label: '排班表',   icon: '🗓️', mod: () => SchedMod},
     memo:    {label: '备忘录',   icon: '📝', mod: () => MemoMod},
-    finance: {label: '财务账本', icon: '💰', mod: () => FinMod},
     ai:      {label: 'AI助手',  icon: '🤖', mod: () => AiMod}
   },
   go(key){
@@ -30,7 +29,7 @@ const Nav = {
 
 // 云端有更新时：如当前正在查看对应模块则自动刷新界面
 Store.onRemote = function(shard){
-  const map = {todo: 'todo', work: 'work', wellness: 'wellness', products: 'products', ledger: 'ledger', schedule: 'schedule', memo: 'memo', finance: 'finance'};
+  const map = {todo: 'todo', work: 'work', wellness: 'wellness', products: 'products', ledger: 'ledger', schedule: 'schedule', memo: 'memo'};
   toast('☁️ 已同步到其他人的最新修改');
   if(map[shard] === Nav.cur || (shard === 'products' && (Nav.cur === 'match' || Nav.cur === 'wellness'))){
     if(!document.querySelector('#modal-mask')) Nav.go(Nav.cur);
@@ -46,8 +45,7 @@ function defaults(){
     ledger: {linfang: [], sales: [], reception: [], bracelet: [], commission: []},
     schedule: {overrides: {}, intern: {}},
     settings: {},
-    memo: {items: []},
-    finance: {items: [], incomeCats: ['支付宝','微信','挂号','食堂卡','小程序','美团','淘宝闪购','院内接待','其他'], expenseCats: ['进货','房租','工资','水电燃气','设备维修','办公杂费','提成','其他支出']}
+    memo: {items: []}
   };
 }
 
