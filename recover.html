@@ -179,7 +179,14 @@ async function recover(){
     let merged;
     if(s==='products') merged = mergeItemShard(c.data, remote?remote.data:{items:[]});
     else merged = mergeRecordBooks(c.data, remote?remote.data:{});
-    const ok = await pushMerged(s, merged, c.rev);
+    // 防并发丢更新：推送前再拉一次云端，把并发写入也并进来
+    // （textdb 为 last-write-wins，不校验 rev；合并前尽量取到最新云端状态，避免多设备同时合并时互相覆盖）
+    const remote2 = await fetchRemote(s);
+    if(remote2 && remote2.data!==undefined){
+      merged = (s==='products') ? mergeItemShard(merged, remote2.data) : mergeRecordBooks(merged, remote2.data);
+    }
+    const baseRev = (remote2 && remote2.rev) || (remote && remote.rev) || (c.rev||1);
+    const ok = await pushMerged(s, merged, baseRev);
     const cnt = s==='products' ? (merged.items||[]).length : Object.keys(merged).reduce((a,b)=>a+((merged[b]||[]).length||0),0);
     log += (ok?'✅ ':'❌ ') + s + '：已合并为 '+cnt+' 条并'+(ok?'推送云端成功':'推送失败，请重试')+'\n';
   }
