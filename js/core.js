@@ -32,6 +32,19 @@ const MERGE_SHARDS = new Set(['ledger']);
 // 产品分片（{items:[...]}）：按 id 合并，避免手机/电脑同时编辑时整值覆盖互相吞掉对方的产品增改（尤其图片）。
 const MERGE_ITEM_SHARDS = new Set(['products']);
 
+// 逻辑分片 ledger 的云端「物理分片」映射：textdb 单值上限 20 万字符，
+// 运营台账合计数已逼近该上限（导致各设备推送被服务端拒绝「内容最多20万字符」），
+// 故把 ledger 按账本拆成多个独立 key，单片远低于上限；浏览器侧仍以整本 ledger 读写
+// （业务代码 m_ledger.js 完全无感）。主分片键名沿用 'ledger'：旧值本就含全部账本，
+// 迁移期读到的仍是全量，天然兜底。ledger_moon 由金山文档同步脚本维护，浏览器只读、不推送。
+const LEDGER_PARTS = [
+  { key: 'ledger',      books: ['sales', 'linfang', 'linfangPre'] },
+  { key: 'ledger_r',    books: ['reception'] },
+  { key: 'ledger_b',    books: ['bracelet', 'commission', 'group', 'unpaid', 'unit'] },
+  { key: 'ledger_moon', books: ['mooncake', '_syncDone'] },
+];
+const LEDGER_READONLY_PARTS = new Set(['ledger_moon']);
+
 // 按记录合并两个台账分片：local/remote 形如 { 账本: [ {id, t, ...} ] }
 // 规则：同一 id 保留 t 较新者；只有一方有的记录全部保留（并集）；删除记录（del:true）也按 t 较新者判定。
 // 返回合并后的对象；若结构非「对象→数组」则视为非台账，返回 null 不处理。
@@ -185,6 +198,7 @@ const Store = {
     this.pushTimers[s] = setTimeout(() => this.push(s), TCM_CONFIG.pushDebounce);
   },
   async push(s){
+    if(s === 'ledger') return this.pushLedger();
     if(this.pushing[s]){ this.pendingPush[s] = true; return; }
     this.pushing[s] = true;
     try {
@@ -212,6 +226,84 @@ const Store = {
     this.pushing[s] = false;
     if(this.pendingPush[s]){ this.pendingPush[s] = false; this.push(s); }
   },
+  // ===== 逻辑分片 ledger 的「物理分片」读写（避开 textdb 单值 20 万字符上限）=====
+  // 推送：先从各分片取回并按记录并集合并，再按账本拆包写入各物理 key。
+  // 写入顺序「先非主分片、后主分片」：主分片沿用旧 key（含历史全量），最后覆盖，
+  // 迁移期即使中途中断也不会出现缺本（旧 key 仍保有全量兜底）。
+  async pushLedger(){
+    if(this.pushing['ledger']){ this.pendingPush['ledger'] = true; return; }
+    this.pushing['ledger'] = true;
+    try {
+      const remote = await this.fetchLedgerRemote();
+      let merged = this.data['ledger'];
+      if(remote && remote.data && Object.keys(remote.data).length){
+        const m = mergeRecordBooks(this.data['ledger'], remote.data);
+        if(m !== null){ merged = m; this.data['ledger'] = m; this.saveLocal('ledger'); }
+      }
+      const parts = LEDGER_PARTS.filter(p => !LEDGER_READONLY_PARTS.has(p.key));
+      parts.sort((a, b) => (a.key === 'ledger' ? 1 : 0) - (b.key === 'ledger' ? 1 : 0));
+      let allOk = true, lastErr = '';
+      for(const p of parts){
+        const subset = {};
+        for(const k of p.books){ if(merged && merged[k] !== undefined) subset[k] = merged[k]; }
+        const payload = JSON.stringify({rev: this.rev['ledger'] || 1, device: this.device, t: Date.now(), data: subset});
+        const body = new URLSearchParams();
+        body.set('key', TCM_CONFIG.cloudBase + p.key);
+        body.set('value', payload);
+        try {
+          const r = await fetchWithTimeout(TCM_CONFIG.updateUrl, {method: 'POST', body}, 10000);
+          const j = await r.json();
+          if(!(j && j.status === 1)){ allOk = false; lastErr = j && j.error; }
+        } catch(e){ allOk = false; }
+      }
+      if(allOk){ this.cloudOk = true; this.dirty['ledger'] = false; this.lastSync = Date.now(); setSyncUI('ok'); }
+      else { this.cloudOk = false; setSyncUI('err', lastErr); }
+    } catch(e){ this.cloudOk = false; setSyncUI('err'); }
+    this.pushing['ledger'] = false;
+    if(this.pendingPush['ledger']){ this.pendingPush['ledger'] = false; this.pushLedger(); }
+  },
+  // 读取 ledger 的全部物理分片，还原为整本 ledger（含脚本维护的 mooncake / _syncDone）
+  async fetchLedgerRemote(){
+    const out = {}; let t = 0, rev = 0;
+    for(const p of LEDGER_PARTS){
+      const r = await this.fetchRemote(p.key);
+      if(r){
+        if(r.data) for(const k of Object.keys(r.data)) out[k] = r.data[k];
+        t = Math.max(t, r.t || 0);
+        rev = Math.max(rev, r.rev || 0);
+      }
+    }
+    return { data: out, t, rev };
+  },
+  async pullLedger(force){
+    try {
+      const remote = await this.fetchLedgerRemote();
+      this.cloudOk = true; this.lastSync = Date.now();
+      if(!remote || !remote.data || !Object.keys(remote.data).length){
+        if(this.dirty['ledger']) return;   // 本地有未保存改动，优先保留本地
+        this.pushLedger(); return;          // 云端为空 → 用本地恢复
+      }
+      const remoteT = remote.t || 0, localT = this.shardT['ledger'] || 0;
+      const localDirty = !!this.dirty['ledger'];
+      const cloudNewer = force || remoteT > localT || (remote.rev || 0) > (this.rev['ledger'] || 0);
+      if(cloudNewer && !(localDirty && !force)){
+        const merged = mergeRecordBooks(this.data['ledger'], remote.data);
+        if(merged !== null){
+          this.data['ledger'] = merged;
+          // 本地含云端缺失记录 / 更优版本 → 回推云端，形成自愈闭环
+          if(JSON.stringify(merged) !== JSON.stringify(remote.data)) this.markDirty('ledger');
+        }
+        this.rev['ledger'] = Math.max(this.rev['ledger'] || 0, remote.rev || 0);
+        this.shardT['ledger'] = remoteT || Date.now();
+        this.saveLocal('ledger');
+        if(this.onRemote) this.onRemote('ledger');
+        setSyncUI('ok');
+      } else if(localDirty && !force){
+        clearTimeout(this.pushTimers['ledger']);
+        this.pushTimers['ledger'] = setTimeout(() => this.pushLedger(), 300);
+      }
+    } catch(e){ this.cloudOk = false; setSyncUI('err'); }
+  },
   // 仅取回云端当前值，不修改本地状态（用于推送前合并冲突）
   async fetchRemote(s){
     try {
@@ -225,6 +317,7 @@ const Store = {
     } catch(e){ return null; }
   },
   async pullShard(s, force){
+    if(s === 'ledger') return this.pullLedger(force);
     try {
       const r = await fetchWithTimeout(TCM_CONFIG.readUrl(TCM_CONFIG.cloudBase + s) + '?_=' + Date.now(), {cache: 'no-store'}, 8000);
       if(!r.ok) return;

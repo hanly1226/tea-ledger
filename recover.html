@@ -103,6 +103,13 @@ function mergeItemShard(local, remote){
 
 // ===== 本地读取 / 云端读写 =====
 const SHARDS = ['ledger','products'];
+// ledger 已按账本拆为多个云端物理分片（避开 textdb 单值 20 万字符上限），读写需按分片处理
+const LEDGER_PARTS = [
+  { key: 'ledger',      books: ['sales', 'linfang', 'linfangPre'] },
+  { key: 'ledger_r',    books: ['reception'] },
+  { key: 'ledger_b',    books: ['bracelet', 'commission', 'group', 'unpaid', 'unit'] },
+  { key: 'ledger_moon', books: ['mooncake', '_syncDone'] },
+];
 function loadLocal(s){
   try{ const c=JSON.parse(localStorage.getItem('tcmws_'+s)||'null'); if(c&&c.data!==undefined) return c; }catch(e){}
   return null;
@@ -128,6 +135,15 @@ async function pushMerged(s, data, rev){
     const j = await r.json().catch(()=>null);
     return !!(j && j.status===1);
   }catch(e){ return false; }
+}
+// 读取 ledger 的全部物理分片，合并还原为整本 ledger（含脚本维护的 mooncake / _syncDone）
+async function fetchLedgerRemote(){
+  const out={}; let rev=0;
+  for(const p of LEDGER_PARTS){
+    const r = await fetchRemote(p.key);
+    if(r){ if(r.data) for(const k of Object.keys(r.data)) out[k]=r.data[k]; rev=Math.max(rev, r.rev||0); }
+  }
+  return {data:out, rev};
 }
 
 // ===== 扫描 =====
@@ -175,6 +191,25 @@ async function recover(){
   for(const s of SHARDS){
     const c = loadLocal(s);
     if(!c || c.data===undefined) continue;
+    if(s==='ledger'){
+      // ledger 已拆为多个物理分片：先合并全部（含并发写入），再按分片分别写回。
+      // ledger_moon 由金山文档同步脚本维护，此处不覆盖，避免用陈旧本地副本顶掉脚本最新数据。
+      let merged = mergeRecordBooks(c.data, (await fetchLedgerRemote()).data) || c.data;
+      const r2 = await fetchLedgerRemote();
+      merged = mergeRecordBooks(merged, r2.data) || merged;
+      const baseRev = r2.rev || c.rev || 1;
+      let okAll = true;
+      for(const p of LEDGER_PARTS){
+        if(p.key==='ledger_moon') continue;
+        const subset = {};
+        for(const k of p.books) if(merged[k]!==undefined) subset[k]=merged[k];
+        const ok = await pushMerged(p.key, subset, baseRev);
+        if(!ok) okAll = false;
+      }
+      const cnt = Object.keys(merged).reduce((a,b)=>a+((Array.isArray(merged[b])?merged[b].length:0)||0),0);
+      log += (okAll?'✅ ':'❌ ') + 'ledger：已合并为 '+cnt+' 条并'+(okAll?'推送云端成功':'推送失败，请重试')+'\n';
+      continue;
+    }
     const remote = await fetchRemote(s);
     let merged;
     if(s==='products') merged = mergeItemShard(c.data, remote?remote.data:{items:[]});
