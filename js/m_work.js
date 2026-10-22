@@ -9,6 +9,7 @@ const BIZ_EARLY = ['salesEarlyCash', 'salesEarlyWx', 'salesEarlyMeituan', 'sales
 const BIZ_LATE  = ['salesLateCash', 'salesLateWx', 'salesLateMeituan', 'salesLateTaobao', 'salesLateMini', 'salesLateYunhui', 'salesLateGuahao', 'salesLateCanteen'];
 const BIZ_CH = BIZ_EARLY.concat(BIZ_LATE);
 const BIZ_CH_LABEL = {Cash: '现金', Wx: '建行收款码', Meituan: '美团外卖', Taobao: '淘宝闪购', Mini: '小程序', Yunhui: '云惠购', Guahao: '医院收款（门诊）', Canteen: '医院收款（食堂）'};
+const BIZ_CH_BASES = Object.keys(BIZ_CH_LABEL); // [Cash, Wx, Meituan, Taobao, Mini, Yunhui, Guahao, Canteen]（顺序=直营6项+医院联动2项）
 // 营收分组（顺序即表单显示顺序）
 const BIZ_GROUPS = [
   {key: 'direct', label: '直营营收金额', short: '直营', chs: ['Cash', 'Wx', 'Meituan', 'Taobao', 'Mini', 'Yunhui']},
@@ -360,6 +361,8 @@ const WorkMod = {
   bizCard(d){
     const w = Store.get('work'); if(!w.biz) w.biz = {};
     const rec = this.biz(d);
+    const earlyP = this.bizStaffForShift(d, 'early') || '（未排班）';
+    const lateP  = this.bizStaffForShift(d, 'late')  || '（未排班）';
     const ch = this.bizChannels(rec);
     const se0 = BIZ_EARLY.reduce((s, k) => s + ch.e[k.slice('salesEarly'.length)], 0);
     const sl0 = BIZ_LATE.reduce((s, k) => s + ch.l[k.slice('salesLate'.length)], 0);
@@ -414,11 +417,11 @@ const WorkMod = {
           '<label>出店人数<input autocomplete="off" id="biz-flowOut" type="number" min="0" value="' + (+rec.flowOut || 0) + '" oninput="WorkMod.calcBizFlow()"></label>' +
           '<label>人流量(自动)<input autocomplete="off" id="biz-flow" type="number" min="0" value="' + this.bizFlow(rec) + '" disabled></label>' +
         '</div>' +
-        '<div class="biz-sub"><div class="biz-sub-h">☀️ 早班营业额（直营 6 项 + 医院联动 2 项，自动合计）</div>' +
+        '<div class="biz-sub"><div class="biz-sub-h">☀️ 早班营业额：' + esc(earlyP) + '（直营 6 项 + 医院联动 2 项，自动合计）</div>' +
           earlyInputs +
           '<label class="biz-sum">早班合计(自动)<input autocomplete="off" id="biz-salesE" type="number" min="0" step="0.01" value="' + se0.toFixed(2) + '" disabled></label>' +
         '</div>' +
-        '<div class="biz-sub"><div class="biz-sub-h">🌙 晚班营业额（直营 6 项 + 医院联动 2 项，自动合计）</div>' +
+        '<div class="biz-sub"><div class="biz-sub-h">🌙 晚班营业额：' + esc(lateP) + '（直营 6 项 + 医院联动 2 项，自动合计）</div>' +
           lateInputs +
           '<label class="biz-sum">晚班合计(自动)<input autocomplete="off" id="biz-salesL" type="number" min="0" step="0.01" value="' + sl0.toFixed(2) + '" disabled></label>' +
         '</div>' +
@@ -436,7 +439,7 @@ const WorkMod = {
       '<input autocomplete="off" type="month"  value="' + month + '" onchange="WorkMod.setBizMonth(this.value)" ' +
       'style="width:auto;display:inline-block;vertical-align:middle;margin-left:6px;font-size:13px">' +
       '</h3>' +
-      (ana.dayCount ? this.bizSummary(ana) :
+      (ana.dayCount ? (this.bizSummary(ana)) :
         '<div class="empty">「' + month + '」还没有数据，先在上面填几天的吧</div>') +
       (ana.dayCount ?
         '<div class="add-row"><button class="btn sm ghost" onclick="WorkMod.exportBizCsv(\'' + month + '\')">⬇️ 导出 ' + month + ' 经营数据 CSV</button></div>' +
@@ -446,6 +449,9 @@ const WorkMod = {
       '<input autocomplete="off" type="number" min="2000" max="2100" value="' + this.bizYear + '" onchange="WorkMod.setBizYear(this.value)" ' +
       'style="width:78px;display:inline-block;vertical-align:middle;font-size:13px"> 年度分析</h3>' +
       this.bizYearSummary(this.bizYearAnalyze(this.bizYear)) +
+      '<h3 style="margin-top:18px">👥 每月按人头统计（于丹 / 魏燕征 · 各营收科目，按排班表归属）</h3>' +
+      this.bizStaffReport(month) +
+      '<div class="add-row"><button class="btn sm ghost" onclick="WorkMod.exportBizStaffCsv(\'' + month + '\')">⬇️ 导出 ' + month + ' 按人头 CSV</button></div>' +
       '<input autocomplete="off" type="file" id="biz-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="WorkMod.handleBizFile(this.files[0]);this.value=\'\'">' +
       '</div>';
   },
@@ -499,6 +505,84 @@ const WorkMod = {
       '<div class="hint">各渠道单量占比：美团 ' + pct(a.meituan, a.orders) + '% · 淘宝闪购 ' + pct(a.taobao, a.orders) +
         '% · 小程序 ' + pct(a.mini, a.orders) + '%（共 ' + a.orders + ' 单）。' +
       (a.maxDay ? '本月营业额最高：' + a.maxDay + '（' + moneyFmt(a.maxS) + '）；最低：' + a.minDay + '（' + moneyFmt(a.minS) + '）。' : '') + '</div>';
+  },
+  // 早/晚班营业额归属人：一律按排班表（谁上早班/晚班/全天班就归谁；排班表不变，不做任何固定兜底）
+  bizStaffForShift(dateStr, shift){
+    let person = null;
+    TCM_DATA.STAFF.forEach(name => {
+      const sh = (typeof SchedMod !== 'undefined') ? SchedMod.getShift(dateStr, name) : '';
+      if(shift === 'early' && (sh === '早班' || sh === '全天班')) person = name;
+      if(shift === 'late'  && (sh === '晚班' || sh === '全天班')) person = name;
+    });
+    return person; // 当天未排到任何人(休/白班/未排) → 该班次营业额不归属具体人
+  },
+  // 月度按人头 + 分类统计的数据
+  bizStaffData(month){
+    const w = Store.get('work'); const biz = w.biz || {};
+    const days = Object.keys(biz).filter(k => k.slice(0, 7) === month);
+    const staffs = TCM_DATA.STAFF;
+    const data = {};
+    staffs.forEach(s => { data[s] = {}; BIZ_CH_BASES.forEach(b => data[s][b] = 0); });
+    days.forEach(k => {
+      const r = biz[k]; if(!r) return;
+      const ep = this.bizStaffForShift(k, 'early');
+      const lp = this.bizStaffForShift(k, 'late');
+      BIZ_CH_BASES.forEach(b => {
+        if(data[ep]) data[ep][b] += (+r['salesEarly' + b] || 0);
+        if(data[lp]) data[lp][b] += (+r['salesLate' + b] || 0);
+      });
+    });
+    const groupSum = (s, chs) => chs.reduce((x, b) => x + (s ? data[s][b] : 0), 0);
+    const rows = staffs.map(s => {
+      const direct = groupSum(s, BIZ_GROUPS[0].chs);
+      const hosp = groupSum(s, BIZ_GROUPS[1].chs);
+      return {name: s, direct, hosp, total: direct + hosp, byBase: data[s]};
+    });
+    const colTotal = {};
+    BIZ_CH_BASES.forEach(b => { colTotal[b] = staffs.reduce((x, s) => x + data[s][b], 0); });
+    const colDirect = groupSum(null, BIZ_GROUPS[0].chs) || BIZ_GROUPS[0].chs.reduce((x, b) => x + colTotal[b], 0);
+    const colHosp = BIZ_GROUPS[1].chs.reduce((x, b) => x + colTotal[b], 0);
+    const colTotalAll = BIZ_CH_BASES.reduce((x, b) => x + colTotal[b], 0);
+    return {month, staffs, rows, data, colTotal, colDirect, colHosp, colTotalAll};
+  },
+  // 月度「按人头统计」展示（按营收科目拆分到于丹/魏燕征）
+  bizStaffReport(month){
+    const d = this.bizStaffData(month);
+    const headCells = BIZ_CH_BASES.map(b => '<th>' + BIZ_CH_LABEL[b] + '</th>')
+      .concat(['<th>直营小计</th>', '<th>医院联动小计</th>', '<th>合计</th>']);
+    const bodyRows = d.rows.map(r => {
+      const cells = BIZ_CH_BASES.map(b => '<td>' + moneyFmt(r.byBase[b]) + '</td>')
+        .concat(['<td>' + moneyFmt(r.direct) + '</td>', '<td>' + moneyFmt(r.hosp) + '</td>', '<td><b>' + moneyFmt(r.total) + '</b></td>']);
+      return '<tr><td><b>' + esc(r.name) + '</b></td>' + cells + '</tr>';
+    }).join('');
+    const footRow = '<tr class="biz-staff-foot"><td><b>两人合计</b></td>' +
+      BIZ_CH_BASES.map(b => '<td>' + moneyFmt(d.colTotal[b]) + '</td>')
+      .concat(['<td>' + moneyFmt(d.colDirect) + '</td>', '<td>' + moneyFmt(d.colHosp) + '</td>', '<td><b>' + moneyFmt(d.colTotalAll) + '</b></td>']) + '</tr>';
+    const share = d.rows.map(r => r.name + ' ' + (d.colTotalAll ? Math.round(r.total / d.colTotalAll * 100) : 0) + '%').join(' · ');
+    return '<div class="tbl-scroll"><table class="biz-table biz-staff">' +
+      '<thead><tr><th>人员</th>' + headCells + '</tr></thead>' +
+      '<tbody>' + bodyRows + footRow + '</tbody></table></div>' +
+      '<div class="hint">营业额按当日早/晚班归属拆分到人：' + share + '。分类为各营收科目（含直营/医院联动小计）。</div>';
+  },
+  exportBizStaffCsv(month){
+    const d = this.bizStaffData(month);
+    if(d.colTotalAll === 0){ toast('本月暂无营业额数据可导出', false); return; }
+    const head = ['人员'].concat(BIZ_CH_BASES.map(b => BIZ_CH_LABEL[b]))
+      .concat(['直营小计', '医院联动小计', '合计']);
+    const rows = d.rows.map(r => [r.name]
+      .concat(BIZ_CH_BASES.map(b => r.byBase[b].toFixed(2)))
+      .concat([r.direct.toFixed(2), r.hosp.toFixed(2), r.total.toFixed(2)]));
+    rows.push(['两人合计']
+      .concat(BIZ_CH_BASES.map(b => d.colTotal[b].toFixed(2)))
+      .concat([d.colDirect.toFixed(2), d.colHosp.toFixed(2), d.colTotalAll.toFixed(2)]));
+    const lines = [head.join(',')].concat(rows.map(r => r.join(',')));
+    const blob = new Blob(['\ufeff' + lines.join('\n')], {type: 'text/csv;charset=utf-8'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '经营数据_按人头_' + month + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    toast('已导出 ' + month + ' 按人头经营数据 CSV');
   },
   // 年度分析：汇总某年全部日数据，并拆到各月
   bizYearAnalyze(year){

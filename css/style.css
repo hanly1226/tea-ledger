@@ -332,6 +332,9 @@ textarea{width:100%;resize:vertical}
 .biz-table th,.biz-table td{border:1px solid var(--line);padding:6px 8px;text-align:center}
 .biz-table th{background:var(--bg);color:var(--green)}
 .biz-table .empty{color:var(--muted);padding:14px}
+.biz-staff th:first-child,.biz-staff td:first-child{text-align:left;background:var(--bg);position:sticky;left:0}
+.biz-staff-foot td{background:#fff7e6;font-weight:700;border-top:2px solid var(--green)}
+.biz-table.biz-staff{min-width:760px}
 .lg-analysis{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)}
 .lg-analysis h3{margin:4px 0 2px}
 .bar-list{margin:6px 0 2px}
