@@ -19,6 +19,7 @@ const WorkMod = {
   selDate: todayStr(),
   bizDate: todayStr(),
   bizMonth: todayStr().slice(0, 7),
+  bizStaffMonth: todayStr().slice(0, 7),
   bizYear: String(new Date().getFullYear()),
   weekOffset: 0,
   weekCustomStart: '',
@@ -449,9 +450,7 @@ const WorkMod = {
       '<input autocomplete="off" type="number" min="2000" max="2100" value="' + this.bizYear + '" onchange="WorkMod.setBizYear(this.value)" ' +
       'style="width:78px;display:inline-block;vertical-align:middle;font-size:13px"> 年度分析</h3>' +
       this.bizYearSummary(this.bizYearAnalyze(this.bizYear)) +
-      '<h3 style="margin-top:18px">👥 每月按人头统计（于丹 / 魏燕征 · 各营收科目，按排班表归属）</h3>' +
-      this.bizStaffReport(month) +
-      '<div class="add-row"><button class="btn sm ghost" onclick="WorkMod.exportBizStaffCsv(\'' + month + '\')">⬇️ 导出 ' + month + ' 按人头 CSV</button></div>' +
+      '<div id="biz-staff-wrap">' + this.bizStaffWrapHTML() + '</div>' +
       '<input autocomplete="off" type="file" id="biz-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="WorkMod.handleBizFile(this.files[0]);this.value=\'\'">' +
       '</div>';
   },
@@ -544,6 +543,27 @@ const WorkMod = {
     const colHosp = BIZ_GROUPS[1].chs.reduce((x, b) => x + colTotal[b], 0);
     const colTotalAll = BIZ_CH_BASES.reduce((x, b) => x + colTotal[b], 0);
     return {month, staffs, rows, data, colTotal, colDirect, colHosp, colTotalAll};
+  },
+  // 月度「按人头统计」区块（独立月份前后翻看，默认当月，不影响上方每日表单）
+  bizStaffWrapHTML(){
+    const m = this.bizStaffMonth;
+    return '<h3 style="margin-top:18px">👥 每月按人头统计（于丹 / 魏燕征 · 各营收科目，按排班表归属）</h3>' +
+      '<div class="biz-date-nav" style="margin:6px 0 12px">' +
+        '<button class="btn sm" onclick="WorkMod.setBizStaffMonth(-1)">◀ 上月</button>' +
+        '<span class="bdn-cur">' + m.replace('-', '年') + '月</span>' +
+        '<button class="btn sm" onclick="WorkMod.setBizStaffMonth(1)">下月 ▶</button>' +
+      '</div>' +
+      this.bizStaffReport(m) +
+      '<div class="add-row"><button class="btn sm ghost" onclick="WorkMod.exportBizStaffCsv(\'' + m + '\')">⬇️ 导出 ' + m + ' 按人头 CSV</button></div>';
+  },
+  setBizStaffMonth(delta){
+    const [y, m] = this.bizStaffMonth.split('-').map(Number);
+    let ny = y, nm = m + delta;
+    if(nm < 1){ nm = 12; ny--; } else if(nm > 12){ nm = 1; ny++; }
+    this.bizStaffMonth = ny + '-' + pad2(nm);
+    const el = document.getElementById('biz-staff-wrap');
+    if(el) el.innerHTML = this.bizStaffWrapHTML();
+    else this.renderBizOnly();
   },
   // 月度「按人头统计」展示（按营收科目拆分到于丹/魏燕征）
   bizStaffReport(month){
