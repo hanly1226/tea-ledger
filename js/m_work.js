@@ -426,6 +426,7 @@ const WorkMod = {
           lateInputs +
           '<label class="biz-sum">晚班合计(自动)<input autocomplete="off" id="biz-salesL" type="number" min="0" step="0.01" value="' + sl0.toFixed(2) + '" disabled></label>' +
         '</div>' +
+        this.bizDayTotalsHTML(ch) +
         '<div class="biz-sub"><div class="biz-sub-h">📦 外卖平台单量（订单数，非金额）</div>' +
           '<label>美团单量<input autocomplete="off" id="biz-meituan" type="number" min="0" value="' + (+rec.meituan || 0) + '"></label>' +
           '<label>淘宝单量<input autocomplete="off" id="biz-taobao" type="number" min="0" value="' + (+rec.taobao || 0) + '"></label>' +
@@ -453,6 +454,22 @@ const WorkMod = {
       '<div id="biz-staff-wrap">' + this.bizStaffWrapHTML() + '</div>' +
       '<input autocomplete="off" type="file" id="biz-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="WorkMod.handleBizFile(this.files[0]);this.value=\'\'">' +
       '</div>';
+  },
+  // 当日每项合计：早班 + 晚班 各科目逐项目求和（自动，置于晚班金额下一项）
+  bizDayTotalsHTML(ch){
+    const block = g => {
+      const inputs = g.chs.map(base => {
+        const v = (+ch.e[base] || 0) + (+ch.l[base] || 0);
+        return '<label>' + BIZ_CH_LABEL[base] + '<input autocomplete="off" id="biz-day-' + base + '" type="number" min="0" step="0.01" value="' + v.toFixed(2) + '" disabled></label>';
+      }).join('');
+      const sub = g.chs.reduce((s, base) => s + (+ch.e[base] || 0) + (+ch.l[base] || 0), 0);
+      return '<div class="biz-grp"><div class="biz-grp-h">' + g.label + '</div>' + inputs +
+        '<label class="biz-sum">' + g.short + '小计<input autocomplete="off" id="biz-day-grp-' + g.key + '" type="number" min="0" step="0.01" value="' + sub.toFixed(2) + '" disabled></label></div>';
+    };
+    const total = BIZ_CH_BASES.reduce((s, base) => s + (+ch.e[base] || 0) + (+ch.l[base] || 0), 0);
+    return '<div class="biz-sub"><div class="biz-sub-h">📋 当日每项合计（早班 + 晚班，自动）</div>' +
+      BIZ_GROUPS.map(block).join('') +
+      '<label class="biz-sum">当天营业额合计(自动)<input autocomplete="off" id="biz-day-total" type="number" min="0" step="0.01" value="' + total.toFixed(2) + '" disabled></label></div>';
   },
   bizAnalyze(month){
     const w = Store.get('work'); const biz = w.biz || {};
@@ -681,6 +698,20 @@ const WorkMod = {
     if(eEl) eEl.value = e.toFixed(2);
     if(lEl) lEl.value = l.toFixed(2);
     if(tEl) tEl.value = (e + l).toFixed(2);
+    // 当日每项合计（早班 + 晚班）实时刷新
+    BIZ_CH_BASES.forEach(base => {
+      const eIn = document.getElementById('biz-salesEarly' + base);
+      const lIn = document.getElementById('biz-salesLate' + base);
+      const v = (+ (eIn ? eIn.value : 0) || 0) + (+ (lIn ? lIn.value : 0) || 0);
+      const dEl = document.getElementById('biz-day-' + base);
+      if(dEl) dEl.value = v.toFixed(2);
+    });
+    BIZ_GROUPS.forEach(g => {
+      const gEl = document.getElementById('biz-day-grp-' + g.key);
+      if(gEl){ let s = 0; g.chs.forEach(base => { const eIn = document.getElementById('biz-salesEarly' + base); const lIn = document.getElementById('biz-salesLate' + base); s += (+ (eIn ? eIn.value : 0) || 0) + (+ (lIn ? lIn.value : 0) || 0); }); gEl.value = s.toFixed(2); }
+    });
+    const dtEl = document.getElementById('biz-day-total');
+    if(dtEl) dtEl.value = (e + l).toFixed(2);
   },
   saveBiz(){
     const w = Store.get('work'); if(!w.biz) w.biz = {};
