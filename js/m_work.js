@@ -403,16 +403,10 @@ const WorkMod = {
       '<a onclick="WorkMod.downloadBizTemplate()" title="下载 Excel 导入模板">📄 模板</a>' +
       '<a onclick="WorkMod.importBizFile()" title="从 Excel/CSV 批量导入历史数据">📥 导入</a>' +
       '</span></h3>' +
-      '<div class="biz-date-nav">' +
-        '<span class="bdn-label">📅 选择日期填报 / 修改：</span>' +
-        '<button class="btn sm" onclick="WorkMod.prevBiz()">◀ 前一天</button>' +
-        '<input autocomplete="off" type="date" value="' + d + '" onchange="WorkMod.setBizDate(this.value)">' +
-        '<button class="btn sm" onclick="WorkMod.nextBiz()">后一天 ▶</button>' +
-        '<button class="btn sm ghost" onclick="WorkMod.todayBiz()">回到今天</button>' +
-        '<span class="bdn-cur">正在编辑：' + d + ' ' + weekdayCn(d) + '</span>' +
-      '</div>' +
+      this.bizDateNavHTML(d) +
       '<div class="hint">记录每天的人流量与各大渠道单量，月底可一键分析与导出（数据随云端全店共享，换设备也不丢）。也可用「📥 导入」批量上传 Excel/CSV 历史数据。改日期后此卡片会自动刷新为所选那天的历史数据，直接改完点「保存」即可覆盖。</div>' +
       '<div class="add-row biz-form">' +
+        this.bizDateNavHTML(d) +
         '<div class="biz-sub"><div class="biz-sub-h">👥 人流量</div>' +
           '<label>进店人数<input autocomplete="off" id="biz-flowIn" type="number" min="0" value="' + (+rec.flowIn || 0) + '" oninput="WorkMod.calcBizFlow()"></label>' +
           '<label>出店人数<input autocomplete="off" id="biz-flowOut" type="number" min="0" value="' + (+rec.flowOut || 0) + '" oninput="WorkMod.calcBizFlow()"></label>' +
@@ -426,6 +420,7 @@ const WorkMod = {
           lateInputs +
           '<label class="biz-sum">晚班合计(自动)<input autocomplete="off" id="biz-salesL" type="number" min="0" step="0.01" value="' + sl0.toFixed(2) + '" disabled></label>' +
         '</div>' +
+        this.bizDateNavInline(d) +
         this.bizDayTotalsHTML(ch) +
         '<div class="biz-sub"><div class="biz-sub-h">📦 外卖平台单量（订单数，非金额）</div>' +
           '<label>美团单量<input autocomplete="off" id="biz-meituan" type="number" min="0" value="' + (+rec.meituan || 0) + '"></label>' +
@@ -455,6 +450,17 @@ const WorkMod = {
       '<input autocomplete="off" type="file" id="biz-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="WorkMod.handleBizFile(this.files[0]);this.value=\'\'">' +
       '</div>';
   },
+  // 日期填报/修改导航：顶部与营收录入区上方各一处，便于前后翻看日期
+  bizDateNavHTML(d){
+    return '<div class="biz-date-nav">' +
+      '<span class="bdn-label">📅 选择日期填报 / 修改：</span>' +
+      '<button class="btn sm" onclick="WorkMod.prevBiz()">◀ 前一天</button>' +
+      '<input autocomplete="off" type="date" value="' + d + '" onchange="WorkMod.setBizDate(this.value)">' +
+      '<button class="btn sm" onclick="WorkMod.nextBiz()">后一天 ▶</button>' +
+      '<button class="btn sm ghost" onclick="WorkMod.todayBiz()">回到今天</button>' +
+      '<span class="bdn-cur">正在编辑：' + d + ' ' + weekdayCn(d) + '</span>' +
+    '</div>';
+  },
   // 当日每项合计：早班 + 晚班 各科目逐项目求和（自动，置于晚班金额下一项）
   bizDayTotalsHTML(ch){
     const block = g => {
@@ -470,6 +476,17 @@ const WorkMod = {
     return '<div class="biz-sub"><div class="biz-sub-h">📋 当日每项合计（早班 + 晚班，自动）</div>' +
       BIZ_GROUPS.map(block).join('') +
       '<label class="biz-sum">当天营业额合计(自动)<input autocomplete="off" id="biz-day-total" type="number" min="0" step="0.01" value="' + total.toFixed(2) + '" disabled></label></div>';
+  },
+  // 当日合计区上方的紧凑日期翻看栏（复用顶部逻辑，便于就近翻日期查看各天合计）
+  bizDateNavInline(d){
+    return '<div class="biz-date-nav" style="margin-top:10px">' +
+      '<span class="bdn-label">📅 翻看日期：</span>' +
+      '<button class="btn sm" onclick="WorkMod.prevBiz()">◀ 前一天</button>' +
+      '<input autocomplete="off" type="date" value="' + d + '" onchange="WorkMod.setBizDate(this.value)">' +
+      '<button class="btn sm" onclick="WorkMod.nextBiz()">后一天 ▶</button>' +
+      '<button class="btn sm ghost" onclick="WorkMod.todayBiz()">回到今天</button>' +
+      '<span class="bdn-cur">查看：' + d + ' ' + weekdayCn(d) + '</span>' +
+    '</div>';
   },
   bizAnalyze(month){
     const w = Store.get('work'); const biz = w.biz || {};
