@@ -194,8 +194,8 @@ const TodoMod = {
     const dates = Object.keys(byDate).sort();
     const body = dates.map(dt =>
       '<div class="sum-day"><div class="sum-date">' + dt + ' ' + weekdayCn(dt) + '</div>' +
-      byDate[dt].map(i => '<div class="sum-item">✅ ' + esc(i.text) + '</div>').join('') +
+      byDate[dt].map(i => '<div class="sum-item">' + esc(i.text) + '</div>').join('') +
       '</div>').join('') || '<div class="empty">本月暂无已完成店内事项</div>';
-    return '<div class="card sum-card"><h3>🏪 本月店内事项汇总 <em class="tag ok">已完成 ' + done.length + ' 项</em></h3>' + body + '</div>';
+    return '<div class="card sum-card"><h3>本月店内事项汇总 <em class="tag ok">已完成 ' + done.length + ' 项</em></h3>' + body + '</div>';
   }
 };
