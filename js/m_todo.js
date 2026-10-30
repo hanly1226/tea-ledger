@@ -161,16 +161,16 @@ const TodoMod = {
   },
   summary(kind){
     const base = parseDate(this.selDate);
-    let from, to, title, icon;
+    let from, to, title;
     if(kind === 'week'){
       // 周汇总周期：周六为周首 → 下周五（如 8.1周六 ~ 8.7周五）
       const off = (base.getDay() + 1) % 7;
       from = addDays(base, -off); to = addDays(from, 6);
-      title = '本周汇总（' + fmtDate(from).slice(5) + ' ~ ' + fmtDate(to).slice(5) + '）'; icon = '🗓️';
+      title = '本周汇总（' + fmtDate(from).slice(5) + ' ~ ' + fmtDate(to).slice(5) + '）';
     } else {
       from = new Date(base.getFullYear(), base.getMonth(), 1);
       to = new Date(base.getFullYear(), base.getMonth() + 1, 0);
-      title = '本月汇总（' + (base.getMonth() + 1) + '月）'; icon = '📅';
+      title = '本月汇总（' + (base.getMonth() + 1) + '月）';
     }
     const f = fmtDate(from), t = fmtDate(to);
     const done = this.items().filter(i => i.type === 'daily' && i.done && i.doneDate >= f && i.doneDate <= t);
@@ -179,9 +179,9 @@ const TodoMod = {
     const dates = Object.keys(byDate).sort();
     const body = dates.map(dt =>
       '<div class="sum-day"><div class="sum-date">' + dt + ' ' + weekdayCn(dt) + '</div>' +
-      byDate[dt].map(i => '<div class="sum-item">✅ ' + esc(i.text) + '</div>').join('') +
+      byDate[dt].map(i => '<div class="sum-item">' + esc(i.text) + '</div>').join('') +
       '</div>').join('') || '<div class="empty">该时段暂无已完成事项</div>';
-    return '<div class="card sum-card"><h3>' + icon + ' ' + title + ' <em class="tag ok">已完成 ' + done.length + ' 项</em></h3>' + body + '</div>';
+    return '<div class="card sum-card"><h3>' + title + ' <em class="tag ok">已完成 ' + done.length + ' 项</em></h3>' + body + '</div>';
   },
   summaryShop(){
     const base = parseDate(this.selDate);

@@ -446,6 +446,7 @@ const WorkMod = {
       '<input autocomplete="off" type="number" min="2000" max="2100" value="' + this.bizYear + '" onchange="WorkMod.setBizYear(this.value)" ' +
       'style="width:78px;display:inline-block;vertical-align:middle;font-size:13px"> 年度分析</h3>' +
       this.bizYearSummary(this.bizYearAnalyze(this.bizYear)) +
+      '<div class="add-row"><button class="btn sm ghost" onclick="WorkMod.exportBizFlowYearCsv(\'' + this.bizYear + '\')">⬇️ 导出 ' + this.bizYear + ' 全年人流量 CSV</button></div>' +
       '<div id="biz-staff-wrap">' + this.bizStaffWrapHTML() + '</div>' +
       '<input autocomplete="off" type="file" id="biz-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="WorkMod.handleBizFile(this.files[0]);this.value=\'\'">' +
       '</div>';
@@ -784,6 +785,28 @@ const WorkMod = {
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     toast('已导出 ' + month + ' 经营数据 CSV');
+  },
+  // 导出指定年份的每日人流量（进店 / 出店 / 人流量）CSV
+  exportBizFlowYearCsv(year){
+    const w = Store.get('work'); const biz = w.biz || {};
+    const y = String(year);
+    const days = Object.keys(biz).filter(k => k.slice(0, 4) === y).sort();
+    if(!days.length){ toast('「' + y + '」年暂无经营数据可导出', false); return; }
+    const head = ['日期', '星期', '月份', '进店人数', '出店人数', '人流量'];
+    const rows = days.map(k => {
+      const r = biz[k];
+      const fin = +r.flowIn || 0, fout = +r.flowOut || 0;
+      const fl = this.bizFlow(r);
+      return [k, weekdayCn(k).replace('星期', '周'), k.slice(5, 7) + '月', fin, fout, fl];
+    });
+    const lines = [head.join(',')].concat(rows.map(r => r.join(',')));
+    const blob = new Blob(['\ufeff' + lines.join('\n')], {type: 'text/csv;charset=utf-8'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '人流量_全年_' + y + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    toast('已导出 ' + y + ' 全年人流量 CSV（' + days.length + ' 天）');
   },
   // ===== 每日经营数据：Excel / CSV 导入 =====
   importBizFile(){ const el = document.getElementById('biz-file'); if(el) el.click(); },
