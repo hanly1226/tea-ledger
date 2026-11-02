@@ -20,6 +20,7 @@ const WorkMod = {
   bizDate: todayStr(),
   bizMonth: todayStr().slice(0, 7),
   bizStaffMonth: todayStr().slice(0, 7),
+  bizStaffRange: null,
   bizYear: String(new Date().getFullYear()),
   weekOffset: 0,
   weekCustomStart: '',
@@ -551,9 +552,11 @@ const WorkMod = {
     return person; // 当天未排到任何人(休/白班/未排) → 该班次营业额不归属具体人
   },
   // 月度按人头 + 分类统计的数据
-  bizStaffData(month){
+  bizStaffData(month, range){
     const w = Store.get('work'); const biz = w.biz || {};
-    const days = Object.keys(biz).filter(k => k.slice(0, 7) === month);
+    const days = range
+      ? Object.keys(biz).filter(k => k >= range.from && k <= range.to)
+      : Object.keys(biz).filter(k => k.slice(0, 7) === month);
     const staffs = TCM_DATA.STAFF;
     const data = {};
     staffs.forEach(s => { data[s] = {}; BIZ_CH_BASES.forEach(b => data[s][b] = 0); });
@@ -579,19 +582,36 @@ const WorkMod = {
     const colTotalAll = BIZ_CH_BASES.reduce((x, b) => x + colTotal[b], 0);
     return {month, staffs, rows, data, colTotal, colDirect, colHosp, colTotalAll};
   },
-  // 月度「按人头统计」区块（独立月份前后翻看，默认当月，不影响上方每日表单）
+  // 月度「按人头统计」区块（独立月份前后翻看 + 可选具体日期区间，默认当月，不影响上方每日表单）
   bizStaffWrapHTML(){
     const m = this.bizStaffMonth;
+    const r = this.bizStaffRange;
+    const label = r ? (r.from + ' ~ ' + r.to) : (m.replace('-', '年') + '月');
+    const rangeUI =
+      '<div class="biz-staff-range" style="margin:6px 0 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">' +
+        '<span class="bdn-cur">指定日期区间：</span>' +
+        '<input type="date" id="biz-staff-from" class="ipt sm" value="' + (r ? r.from : '') + '">' +
+        '<span>至</span>' +
+        '<input type="date" id="biz-staff-to" class="ipt sm" value="' + (r ? r.to : '') + '">' +
+        '<button class="btn sm" onclick="WorkMod.setBizStaffRange()">查看区间</button>' +
+        (r ? '<button class="btn sm ghost" onclick="WorkMod.clearBizStaffRange()">清除区间</button>' : '') +
+      '</div>';
+    const report = r ? this.bizStaffReport(m, r) : this.bizStaffReport(m);
+    const exportBtn = r
+      ? '<button class="btn sm ghost" onclick="WorkMod.exportBizStaffCsv(\'' + m + '\', true)">⬇️ 导出区间按人头 CSV</button>'
+      : '<button class="btn sm ghost" onclick="WorkMod.exportBizStaffCsv(\'' + m + '\')">⬇️ 导出 ' + m + ' 按人头 CSV</button>';
     return '<h3 style="margin-top:18px">👥 每月按人头统计（于丹 / 魏燕征 · 各营收科目，按排班表归属）</h3>' +
       '<div class="biz-date-nav" style="margin:6px 0 12px">' +
         '<button class="btn sm" onclick="WorkMod.setBizStaffMonth(-1)">◀ 上月</button>' +
-        '<span class="bdn-cur">' + m.replace('-', '年') + '月</span>' +
+        '<span class="bdn-cur">' + label + '</span>' +
         '<button class="btn sm" onclick="WorkMod.setBizStaffMonth(1)">下月 ▶</button>' +
       '</div>' +
-      this.bizStaffReport(m) +
-      '<div class="add-row"><button class="btn sm ghost" onclick="WorkMod.exportBizStaffCsv(\'' + m + '\')">⬇️ 导出 ' + m + ' 按人头 CSV</button></div>';
+      rangeUI +
+      report +
+      '<div class="add-row">' + exportBtn + '</div>';
   },
   setBizStaffMonth(delta){
+    this.bizStaffRange = null; // 翻月时退出区间视图，回到月份视图
     const [y, m] = this.bizStaffMonth.split('-').map(Number);
     let ny = y, nm = m + delta;
     if(nm < 1){ nm = 12; ny--; } else if(nm > 12){ nm = 1; ny++; }
@@ -600,9 +620,28 @@ const WorkMod = {
     if(el) el.innerHTML = this.bizStaffWrapHTML();
     else this.renderBizOnly();
   },
-  // 月度「按人头统计」展示（按营收科目拆分到于丹/魏燕征）
-  bizStaffReport(month){
-    const d = this.bizStaffData(month);
+  setBizStaffRange(){
+    const fromEl = document.getElementById('biz-staff-from');
+    const toEl = document.getElementById('biz-staff-to');
+    const from = fromEl ? fromEl.value : '';
+    const to = toEl ? toEl.value : '';
+    if(!from || !to){ toast('请先选择起始和结束日期', false); return; }
+    if(from > to){ toast('起始日期不能晚于结束日期', false); return; }
+    this.bizStaffRange = {from, to};
+    const el = document.getElementById('biz-staff-wrap');
+    if(el) el.innerHTML = this.bizStaffWrapHTML();
+    else this.renderBizOnly();
+  },
+  clearBizStaffRange(){
+    this.bizStaffRange = null;
+    const el = document.getElementById('biz-staff-wrap');
+    if(el) el.innerHTML = this.bizStaffWrapHTML();
+    else this.renderBizOnly();
+  },
+  // 月度「按人头统计」展示（按营收科目拆分到于丹/魏燕征；支持具体日期区间）
+  bizStaffReport(month, range){
+    const d = this.bizStaffData(month, range);
+    const scope = range ? ('区间 ' + range.from + ' ~ ' + range.to) : (month.replace('-', '年') + '月');
     const headCells = BIZ_CH_BASES.map(b => '<th>' + BIZ_CH_LABEL[b] + '</th>')
       .concat(['<th>直营小计</th>', '<th>医院联动小计</th>', '<th>合计</th>']);
     const bodyRows = d.rows.map(r => {
@@ -617,11 +656,12 @@ const WorkMod = {
     return '<div class="tbl-scroll"><table class="biz-table biz-staff">' +
       '<thead><tr><th>人员</th>' + headCells + '</tr></thead>' +
       '<tbody>' + bodyRows + footRow + '</tbody></table></div>' +
-      '<div class="hint">营业额按当日早/晚班归属拆分到人：' + share + '。分类为各营收科目（含直营/医院联动小计）。</div>';
+      '<div class="hint">统计范围：' + scope + '。营业额按当日早/晚班归属拆分到人：' + share + '。分类为各营收科目（含直营/医院联动小计）。</div>';
   },
-  exportBizStaffCsv(month){
-    const d = this.bizStaffData(month);
-    if(d.colTotalAll === 0){ toast('本月暂无营业额数据可导出', false); return; }
+  exportBizStaffCsv(month, useRange){
+    const range = useRange ? this.bizStaffRange : null;
+    const d = this.bizStaffData(month, range);
+    if(d.colTotalAll === 0){ toast(range ? '该区间暂无营业额数据可导出' : '本月暂无营业额数据可导出', false); return; }
     const head = ['人员'].concat(BIZ_CH_BASES.map(b => BIZ_CH_LABEL[b]))
       .concat(['直营小计', '医院联动小计', '合计']);
     const rows = d.rows.map(r => [r.name]
@@ -634,10 +674,11 @@ const WorkMod = {
     const blob = new Blob(['\ufeff' + lines.join('\n')], {type: 'text/csv;charset=utf-8'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = '经营数据_按人头_' + month + '.csv';
+    const fname = range ? ('经营数据_按人头_区间_' + range.from + '_' + range.to) : ('经营数据_按人头_' + month);
+    a.download = fname + '.csv';
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    toast('已导出 ' + month + ' 按人头经营数据 CSV');
+    toast('已导出按人头经营数据 CSV');
   },
   // 年度分析：汇总某年全部日数据，并拆到各月
   bizYearAnalyze(year){
